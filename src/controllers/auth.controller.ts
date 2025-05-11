@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Usuario } from '@prisma/client';
 import { Request, Response } from "express";
 import * as authService from "@/services/auth.service";
 //Ingreso de token
@@ -121,6 +121,10 @@ export const me = async (req: Request, res: Response) => {
         telefono: true,
         fecha_nacimiento: true,
         foto_perfil: true,
+
+        ediciones_nombre: true,
+        ediciones_telefono: true,
+        ediciones_fecha: true,
       },
     });
 
@@ -135,9 +139,28 @@ export const me = async (req: Request, res: Response) => {
   }
 };
 
-const storage = multer.diskStorage({
+/*const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${file.fieldname}${ext}`);
+  }
+});*/
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+  const { id_usuario, nombre_completo } = req.user as { id_usuario: number, nombre_completo: string };
+
+// Limpia el nombre para que no tenga espacios ni caracteres raros
+  const nombreCarpeta = nombre_completo.trim().replace(/\s+/g, '_').replace(/[^\w\-]/g, '');
+  const folderPath = path.join(__dirname, '../../uploads/foto_perfil_usuario', `usuario_${id_usuario}_${nombreCarpeta}`);
+
+    // Crea la carpeta si no existe
+    fs.mkdirSync(folderPath, { recursive: true });
+
+    cb(null, folderPath);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
@@ -158,14 +181,15 @@ export const upload = multer({
 });
 
 export const uploadProfilePhoto = async (req: Request, res: Response) => {
-  const { id_usuario } = req.user as { id_usuario: number };
-
+  const { id_usuario, nombre_completo } = req.user as { id_usuario: number, nombre_completo: string };
   if (!req.file) {
     return res.status(400).json({ message: 'No se subió ninguna imagen.' });
   }
 
-  const imagePath = `/uploads/${req.file.filename}`;
-
+  //const imagePath = `/uploads/${req.file.filename}`;
+  const nombreCarpeta = nombre_completo.trim().replace(/\s+/g, '_').replace(/[^\w\-]/g, '');
+  const folderUrl = `/uploads/foto_perfil_usuario/usuario_${id_usuario}_${nombreCarpeta}`;
+  const imagePath = `${folderUrl}/${req.file.filename}`;
   try {
     await prisma.usuario.update({
       where: { id_usuario },
@@ -181,6 +205,7 @@ export const uploadProfilePhoto = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Error al actualizar la foto de perfil.' });
   }
 };
+
 //eliminar foto de perfil
 export const deleteProfilePhoto = async (req: Request, res: Response) => {
   const { id_usuario } = req.user as { id_usuario: number };
@@ -201,9 +226,18 @@ export const deleteProfilePhoto = async (req: Request, res: Response) => {
     fs.unlink(filePath, (err) => {
       if (err) {
         console.error('Error eliminando el archivo:', err);
-        // No hacemos fail solo por esto, seguimos.
       } else {
         console.log('✅ Foto eliminada del servidor:', filePath);
+    
+        // ✅ 2. Si la carpeta queda vacía, la eliminamos
+        const userFolder = path.dirname(filePath);
+        fs.readdir(userFolder, (err, files) => {
+          if (!err && files.length === 0) {
+            fs.rmdir(userFolder, (err) => {
+              if (err) console.error('Error eliminando carpeta vacía:', err);
+            });
+          }
+        });
       }
     });
 
@@ -221,65 +255,118 @@ export const deleteProfilePhoto = async (req: Request, res: Response) => {
 };
 
 export const updateUserField = async (req: Request, res: Response) => {
-  const { campo, valor } = req.body;
+  const { campo, valor }: { campo: CampoEditable; valor: string } = req.body;
   const { id_usuario } = req.user as { id_usuario: number };
 
   if (!campo || !valor) {
     return res.status(400).json({ message: 'Campo y valor son obligatorios.' });
   }
 
-  const camposPermitidos = ['nombre_completo', 'telefono'];
-
+  const camposPermitidos = ['nombre_completo', 'telefono', 'fecha_nacimiento'] as const;
+  type CampoEditable = typeof camposPermitidos[number];
   if (!camposPermitidos.includes(campo)) {
     return res.status(400).json({ message: 'Campo no permitido.' });
   }
 
-  if (campo === 'nombre_completo') {
-    if (typeof valor !== 'string' || valor.length < 3 || valor.length > 50) {
-      return res.status(400).json({ message: "El nombre debe tener entre 3 y 50 caracteres." });
-    }
-    const soloLetrasRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/;
-    if (!soloLetrasRegex.test(valor)) {
-      return res.status(400).json({ message: "El nombre solo puede contener letras y espacios." });
-    }
-    if (/\s{2,}/.test(valor)) {
-      return res.status(400).json({ message: "El nombre no debe tener más de un espacio consecutivo." });
-    }
-    if (/^\s|\s$/.test(valor)) {
-      return res.status(400).json({ message: "El nombre no debe comenzar ni terminar con espacios." });
-    }
-  }
-
-  if (campo === 'telefono') {
-    const telefonoStr = valor.toString();
-
-    // ✅ Nueva validación añadida aquí
-    if (!/^[0-9]*$/.test(telefonoStr)) {
-      return res.status(400).json({ message: "Formato inválido, ingrese solo números." });
-    }
-
-    if (!/^[0-9]{8}$/.test(telefonoStr)) {
-      return res.status(400).json({ message: "El teléfono debe ser un número de 8 dígitos." });
-    }
-
-    if (!/^[67]/.test(telefonoStr)) {
-      return res.status(400).json({ message: "El teléfono debe comenzar con 6 o 7." });
-    }
-  }
+  const campoContadorMap: Record<CampoEditable, keyof Usuario> = {
+    nombre_completo: 'ediciones_nombre',
+    telefono: 'ediciones_telefono',
+    fecha_nacimiento: 'ediciones_fecha',
+  };
+  const campoContador = campoContadorMap[campo];
 
   try {
+    const user = await prisma.usuario.findUnique({
+      where: { id_usuario },
+      select: {
+        [campo]: true,
+        [campoContador]: true,
+      },
+    }) as any;
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    if (user[campoContador] >= 3) {
+      return res.status(403).json({ message: 'Has alcanzado el límite de 3 ediciones para este campo. Para más cambios, contacta al soporte.' });
+    }
+
+    const valorActual = user[campo];
+    const nuevoValor = campo === 'telefono' ? parseInt(valor, 10) : campo === 'fecha_nacimiento' ? new Date(valor) : valor;
+
+    if (valorActual?.toString() === nuevoValor?.toString()) {
+      return res.status(200).json({
+        message: 'No hubo cambios en el valor.',
+        edicionesRestantes: 3 - user[campoContador]
+      });
+    }
+
+    // Validaciones personalizadas
+    if (campo === 'nombre_completo') {
+      if (typeof valor !== 'string' || valor.length < 3 || valor.length > 50) {
+        return res.status(400).json({ message: 'El nombre debe tener entre 3 y 50 caracteres.' });
+      }
+      const soloLetrasRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/;
+      if (!soloLetrasRegex.test(valor)) {
+        return res.status(400).json({ message: 'El nombre solo puede contener letras y espacios.' });
+      }
+      if (/\s{2,}/.test(valor)) {
+        return res.status(400).json({ message: 'El nombre no debe tener más de un espacio consecutivo.' });
+      }
+      if (/^\s|\s$/.test(valor)) {
+        return res.status(400).json({ message: 'El nombre no debe comenzar ni terminar con espacios.' });
+      }
+    }
+
+    if (campo === 'telefono') {
+      const telefonoStr = valor.toString();
+      if (!/^[0-9]*$/.test(telefonoStr)) {
+        return res.status(400).json({ message: 'Formato inválido, ingrese solo números.' });
+      }
+      if (!/^[0-9]{8}$/.test(telefonoStr)) {
+        return res.status(400).json({ message: 'El teléfono debe ser un número de 8 dígitos.' });
+      }
+      if (!/^[67]/.test(telefonoStr)) {
+        return res.status(400).json({ message: 'El teléfono debe comenzar con 6 o 7.' });
+      }
+    }
+
+    if (campo === 'fecha_nacimiento') {
+      const fechaValida = Date.parse(valor);
+      if (isNaN(fechaValida)) {
+        return res.status(400).json({ message: 'Fecha inválida.' });
+      }
+    }
+
     const updatedUser = await prisma.usuario.update({
       where: { id_usuario },
       data: {
-        [campo]: campo === 'telefono' ? parseInt(valor, 10) : valor,
+        [campo]: nuevoValor,
+        [campoContador]: { increment: 1 },
       },
     });
 
+    const edicionesRestantes = 2 - user[campoContador];
+    let infoExtra = '';
+    if (edicionesRestantes === 1) {
+      infoExtra = 'Último intento: esta es tu última oportunidad para editar este campo.';
+    } else if (edicionesRestantes === 0) {
+      infoExtra = 'Has alcanzado el límite de 3 ediciones para este campo.';
+    }
+
     return res.json({
-      message: `${campo === 'nombre_completo' ? 'Nombre' : 'Teléfono'} actualizado correctamente`,
+      message: `$${
+        campo === 'nombre_completo' ? 'Nombre' :
+        campo === 'telefono' ? 'Teléfono' :
+        'Fecha de nacimiento'
+      } actualizado correctamente`,
+      edicionesRestantes,
+      infoExtra,
       user: {
         id_usuario: updatedUser.id_usuario,
-        [campo]: (updatedUser as any)[campo],
+        [campo]: updatedUser[campo],
+        [campoContador]: updatedUser[campoContador],
       },
     });
   } catch (error) {
@@ -334,68 +421,3 @@ export const checkPhoneExists = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Error en el servidor" });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*import { PrismaClient } from '@prisma/client';
-import { Request, Response } from 'express';
-
-import bcrypt from 'bcryptjs'; // 👈 Importar bcrypt
-
-const prisma = new PrismaClient();
-
-export const register = async (req: Request, res: Response) => {
-  const { nombre_completo, email, contraseña, fecha_nacimiento, telefono} = req.body;
-  
-
-  try {
-
-    if (!nombre_completo || !email || !contraseña || !fecha_nacimiento) {
-      return res.status(400).json({ message: "Todos los campos obligatorios deben estar completos." });
-    }
-
-    const existingUser = await prisma.usuario.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return res.status(400).json({ message: "El correo electrónico ya está registrado." });
-    }
-
-    // 🔒 ENCRIPTAR LA CONTRASEÑA AQUÍ
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(contraseña, salt);
-
-    // 🔥 GUARDAR LA CONTRASEÑA ENCRIPTADA
-    const newUser = await prisma.usuario.create({
-      data: {
-        nombre_completo,
-        email,
-        contraseña: hashedPassword, // 👈 Aquí guardamos la contraseña encriptada
-        fecha_nacimiento: new Date(fecha_nacimiento),
-        telefono: telefono ? Number(telefono) : null,
-        registrado_con: "email",
-        verificado: false,
-        host: false,
-        driver: false,
-      },
-    });
-
-    return res.status(201).json({ message: "Usuario registrado exitosamente", user: { email: newUser.email } });
-  }catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Error en el servidor" });
-  }
-};*/

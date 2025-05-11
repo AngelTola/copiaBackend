@@ -3,7 +3,7 @@ import { getDriverProfile } from "../controllers/authVisualizarDriver/Visualizar
 
 const router = Router();
 
-// Agregamos tipo explícito para evitar conflictos con TypeScript
+
 router.get(
   "/profile/:id_usuario",
   (req: Request, res: Response, next: NextFunction) => {

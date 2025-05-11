@@ -29,10 +29,13 @@ model Usuario {
   failedCodeAttempts Int       @default(0)
 
   foto_perfil String? @db.VarChar(255) // NUEVO: para guardar la ruta de la foto
-
-  verificaciones       Verificaciones[]
-  terminosCondiciones  Terminos_condiciones[]
-  vehiculos            Vehiculo[]
+  ediciones_nombre  Int       @default(0)
+  ediciones_fecha   Int       @default(0)
+  ediciones_telefono Int      @default(0)
+  
+  verificaciones   Verificaciones[]
+  terminosCondiciones Terminos_condiciones[]
+  vehiculos Vehiculo[]
   // Método de pago directo
   metodo_pago_tipo     TipoMetodoPago?
   numero_tarjeta       String?                @db.VarChar(16)
