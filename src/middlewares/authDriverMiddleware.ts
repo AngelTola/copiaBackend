@@ -19,7 +19,11 @@ export const authDriverMiddleware = (
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "clave_secreta") as { id_usuario: number };
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "clave_secreta"
+    ) as { id_usuario: number };
+
     req.user = { id_usuario: decoded.id_usuario };
     next();
   } catch (error) {
