@@ -1,14 +1,13 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router } from "express";
 import { getDriverProfile } from "../controllers/authVisualizarDriver/VisualizarDriver.controller";
+import { authDriverMiddleware } from "../middlewares/authDriverMiddleware"; // importa el nuevo middleware
 
 const router = Router();
 
-
 router.get(
-  "/profile/:id_usuario",
-  (req: Request, res: Response, next: NextFunction) => {
-    void getDriverProfile(req, res, next);
-  }
+  "/profile",
+  authDriverMiddleware, // protege la ruta con el token
+  getDriverProfile
 );
 
 export default router;
