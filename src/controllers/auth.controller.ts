@@ -105,7 +105,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 };
 
 
-export const me = async (req: Request, res: Response) => {
+export const me = async (req: Request, res: Response): Promise<void> => {
   const { id_usuario } = req.user as { id_usuario: number };
 
   try {
@@ -122,13 +122,13 @@ export const me = async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+       res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    return res.json({ user });
+     res.json({ user });
   } catch (error) {
     console.error('Error en /me:', error);
-    return res.status(500).json({ message: 'Error en el servidor' });
+     res.status(500).json({ message: 'Error en el servidor' });
   }
 };
 
