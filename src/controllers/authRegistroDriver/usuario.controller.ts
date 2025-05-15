@@ -11,7 +11,7 @@ export const obtenerRentersDisponibles = async (req: Request, res: Response) => 
         nombre_completo: true,
         email: true,
         telefono: true,
-        foto_perfil: true
+        foto_perfil: true 
       }
     });
 
