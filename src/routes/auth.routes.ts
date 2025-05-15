@@ -11,11 +11,7 @@ import { isAuthenticated } from "@/middlewares/isAuthenticated";
 /* import { isAuthenticated } from "@/middlewares/isAuthenticated"; */
 
 //foto de perfil eliminar/actualizar
-import {
-  deleteProfilePhoto,
-  uploadProfilePhoto,
-  upload,
-} from "@/controllers/auth.controller";
+import {deleteProfilePhoto,uploadProfilePhoto,upload,} from "@/controllers/auth.controller";
 import { authMiddleware } from "@/middlewares/authMiddleware";
 
 //Editar nombre completo
