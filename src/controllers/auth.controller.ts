@@ -353,7 +353,7 @@ export const updateUserField = async (req: Request, res: Response) => {
     if (edicionesRestantes === 1) {
       infoExtra = 'Último intento: esta es tu última oportunidad para editar este campo.';
     } else if (edicionesRestantes === 0) {
-      infoExtra = 'Has alcanzado el límite de 3 ediciones para este campo.';
+      infoExtra = 'Has alcanzado el límite de 3 ediciones para este campo. Para más cambios, contacta al soporte.';
     }
 
     return res.json({
