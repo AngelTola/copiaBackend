@@ -125,6 +125,7 @@ export const me = async (req: Request, res: Response) => {
         ediciones_nombre: true,
         ediciones_telefono: true,
         ediciones_fecha: true,
+        host: true,
       },
     });
 
