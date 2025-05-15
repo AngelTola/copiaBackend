@@ -136,7 +136,7 @@ export const me = async (req: Request, res: Response): Promise<void> => {
        res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    return res.json({ user }); // 🔥 Ahora manda todos los datos al frontend
+     res.json({ user }); // 🔥 Ahora manda todos los datos al frontend
   } catch (error) {
     console.error('Error en /me:', error);
      res.status(500).json({ message: 'Error en el servidor' });
