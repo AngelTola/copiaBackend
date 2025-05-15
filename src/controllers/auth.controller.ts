@@ -12,14 +12,14 @@ import { updateGoogleProfile as updateGoogleProfileService } from "../services/a
 
 const prisma = new PrismaClient();
 
-export const register = async (req: Request, res: Response) => {
+export const register = async (req: Request, res: Response): Promise<void> => {
   const { nombre_completo, email, contraseña, fecha_nacimiento, telefono } =
     req.body;
 
   try {
     const existingUser = await authService.findUserByEmail(email);
     if (existingUser) {
-      return res
+       res
         .status(400)
         .json({ message: "El correo electrónico ya está registrado." });
     }
@@ -32,7 +32,7 @@ export const register = async (req: Request, res: Response) => {
       telefono,
     });
 
-    return res
+     res
       .status(201)
       .json({
         message: "Usuario registrado exitosamente",
@@ -40,17 +40,17 @@ export const register = async (req: Request, res: Response) => {
       });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Error en el servidor" });
+     res.status(500).json({ message: "Error en el servidor" });
   }
 };
 
-export const updateGoogleProfile = async (req: Request, res: Response) => {
+export const updateGoogleProfile = async (req: Request, res: Response): Promise<void> => {
   const { nombre_completo, fecha_nacimiento } = req.body;
   const email = (req.user as { email: string }).email;
   //const email = req.user?.email;
 
   if (!email) {
-    return res.status(401).json({ message: "Usuario no autenticado" });
+     res.status(401).json({ message: "Usuario no autenticado" });
   }
 
   try {
@@ -68,22 +68,22 @@ export const updateGoogleProfile = async (req: Request, res: Response) => {
   }
 };
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
 
   try {
     const user = await authService.findUserByEmail(email);
 
     if (!user) {
-      return res
-        .status(401)
-        .json({ message: "Correo ingresado no se encuentra en el sistema." });
+      res.status(401).json({ message: "Correo ingresado no se encuentra en el sistema." });
+      return;
     }
 
     const isValid = await authService.validatePassword(password, user.contraseña ?? "");
 
     if (!isValid) {
-      return res.status(401).json({ message: "Los datos no son válidos" });
+      res.status(401).json({ message: "Los datos no son válidos" });
+      return;
     }
 
     //Token
@@ -92,7 +92,8 @@ export const login = async (req: Request, res: Response) => {
       email: user.email,
       nombre_completo: user.nombre_completo
     });
-    return res.json({
+
+    res.json({
       message: "Login exitoso",
       token,
       user: {
@@ -104,11 +105,12 @@ export const login = async (req: Request, res: Response) => {
     //return res.json({ message: "Login exitoso", user: { email: user.email } });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Error en el servidor' });
+    res.status(500).json({ message: 'Error en el servidor' });
   }
 };
 
-export const me = async (req: Request, res: Response) => {
+
+export const me = async (req: Request, res: Response): Promise<void> => {
   const { id_usuario } = req.user as { id_usuario: number };
 
   try {
@@ -131,13 +133,13 @@ export const me = async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+       res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    return res.json({ user }); // 🔥 Ahora manda todos los datos al frontend
+     res.json({ user }); // 🔥 Ahora manda todos los datos al frontend
   } catch (error) {
     console.error('Error en /me:', error);
-    return res.status(500).json({ message: 'Error en el servidor' });
+     res.status(500).json({ message: 'Error en el servidor' });
   }
 };
 
@@ -185,7 +187,8 @@ export const upload = multer({
 export const uploadProfilePhoto = async (req: Request, res: Response) => {
   const { id_usuario, nombre_completo } = req.user as { id_usuario: number, nombre_completo: string };
   if (!req.file) {
-    return res.status(400).json({ message: 'No se subió ninguna imagen.' });
+    res.status(400).json({ message: 'No se subió ninguna imagen.' });
+    return;
   }
 
   //const imagePath = `/uploads/${req.file.filename}`;
@@ -198,18 +201,18 @@ export const uploadProfilePhoto = async (req: Request, res: Response) => {
       data: { foto_perfil: imagePath },
     });
 
-    return res.json({
+    res.json({
       message: 'Foto de perfil actualizada exitosamente.',
       foto_perfil: imagePath
     });
   } catch (error) {
     console.error('Error al guardar la foto de perfil:', error);
-    return res.status(500).json({ message: 'Error al actualizar la foto de perfil.' });
+    res.status(500).json({ message: 'Error al actualizar la foto de perfil.' });
   }
 };
 
 //eliminar foto de perfil
-export const deleteProfilePhoto = async (req: Request, res: Response) => {
+export const deleteProfilePhoto = async (req: Request, res: Response): Promise<void> => {
   const { id_usuario } = req.user as { id_usuario: number };
 
   try {
@@ -219,7 +222,8 @@ export const deleteProfilePhoto = async (req: Request, res: Response) => {
     });
 
     if (!user || !user.foto_perfil) {
-      return res.status(400).json({ message: 'No hay foto para eliminar.' });
+      res.status(400).json({ message: 'No hay foto para eliminar.' });
+      return;
     }
 
     const filePath = path.join(__dirname, '../../', user.foto_perfil);
@@ -249,10 +253,10 @@ export const deleteProfilePhoto = async (req: Request, res: Response) => {
       data: { foto_perfil: null },
     });
 
-    return res.json({ message: 'Foto de perfil eliminada exitosamente.' });
+    res.json({ message: 'Foto de perfil eliminada exitosamente.' });
   } catch (error) {
     console.error('Error al eliminar la foto de perfil:', error);
-    return res.status(500).json({ message: 'Error al eliminar la foto.' });
+    res.status(500).json({ message: 'Error al eliminar la foto.' });
   }
 };
 
@@ -261,13 +265,13 @@ export const updateUserField = async (req: Request, res: Response) => {
   const { id_usuario } = req.user as { id_usuario: number };
 
   if (!campo || !valor) {
-    return res.status(400).json({ message: 'Campo y valor son obligatorios.' });
+     res.status(400).json({ message: 'Campo y valor son obligatorios.' });
   }
 
   const camposPermitidos = ['nombre_completo', 'telefono', 'fecha_nacimiento'] as const;
   type CampoEditable = typeof camposPermitidos[number];
   if (!camposPermitidos.includes(campo)) {
-    return res.status(400).json({ message: 'Campo no permitido.' });
+     res.status(400).json({ message: 'Campo no permitido.' });
   }
 
   const campoContadorMap: Record<CampoEditable, keyof Usuario> = {
@@ -373,7 +377,7 @@ export const updateUserField = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error al actualizar campo:', error);
-    return res.status(500).json({ message: 'Error al actualizar el campo.' });
+     res.status(500).json({ message: 'Error al actualizar el campo.' });
   }
 };
 
@@ -381,14 +385,16 @@ export const getUserProfile = async (req: Request, res: Response) => {
   const id_usuario = Number(req.params.id_usuario); // Aseguramos que sea número
 
   if (isNaN(id_usuario)) {
-    return res.status(400).json({ message: 'ID de usuario inválido' });
+    res.status(400).json({ message: 'ID de usuario inválido' });
+    return;
   }
 
   try {
     const user = await authService.getUserById(id_usuario); // Usamos el servicio
 
     if (!user) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+      res.status(404).json({ message: 'Usuario no encontrado' });
+      return;
     }
 
     // Devolvemos los datos sin contraseña ni campos sensibles
@@ -401,25 +407,26 @@ export const getUserProfile = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error al obtener el perfil:', error);
-    return res.status(500).json({ message: 'Error en el servidor' });
+    res.status(500).json({ message: 'Error en el servidor' });
   }
 };
 
-export const checkPhoneExists = async (req: Request, res: Response) => {
+
+export const checkPhoneExists = async (req: Request, res: Response): Promise<void> => {
   const { telefono } = req.body;
 
   if (!telefono) {
-    return res.status(400).json({ message: "Teléfono no proporcionado" });
+     res.status(400).json({ message: "Teléfono no proporcionado" });
   }
 
   try {
     const user = await authService.findUserByPhone(telefono);
     if (user) {
-      return res.json({ exists: true });
+       res.json({ exists: true });
     }
-    return res.json({ exists: false });
+     res.json({ exists: false });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Error en el servidor" });
+     res.status(500).json({ message: "Error en el servidor" });
   }
 };

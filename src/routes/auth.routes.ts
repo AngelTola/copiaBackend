@@ -68,11 +68,15 @@ router.delete("/delete-profile-photo", authMiddleware, deleteProfilePhoto);
 
 router.post("/check-phone", checkPhoneExists);
 
-passport.authenticate("google", {
-  failureRedirect: "http://localhost:3000/home?error=cuentaExistente",
-  session: true,
-}),
+router.get(
+  "/auth/google/callback",
+  passport.authenticate("google", {
+    failureRedirect: "http://localhost:3000/home?error=cuentaExistente",
+    session: true,
+  }),
   (req, res) => {
     res.redirect("http://localhost:3000/home?googleComplete=true");
-  };
+  }
+);
+
 export default router;
