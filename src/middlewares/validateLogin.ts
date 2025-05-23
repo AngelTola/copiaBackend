@@ -8,38 +8,35 @@ export const validateLogin = (req: Request, res: Response, next: NextFunction) =
   ];
 
   if (!email || !password) {
-    res.status(400).json({ message: 'Email y contraseña son requeridos' });
+    return res.status(400).json({ message: 'Email y contraseña son requeridos' });
   }
 
   if (email.length > 70) {
-    res.status(400).json({ message: 'La cantidad máxima es de 70 caracteres' });
+    return res.status(400).json({ message: 'La cantidad máxima es de 70 caracteres' });
   }
 
   if (!email.includes('@')) {
-    res.status(400).json({ message: 'Incluye un signo @ en el correo electrónico.' });
+    return res.status(400).json({ message: 'Incluye un signo @ en el correo electrónico.' });
   }
 
   const atIndex = email.indexOf('@');
   if (atIndex <= 0) {
-    res.status(400).json({ message: 'Ingresa nombre de usuario antes del signo @' });
+    return res.status(400).json({ message: 'Ingresa nombre de usuario antes del signo @' });
   }
 
   const domainPart = email.substring(atIndex + 1);
   if (!domainPart || domainPart.trim() === '') {
-    res.status(400).json({ message: 'Ingresa un dominio después del signo @' });
+    return res.status(400).json({ message: 'Ingresa un dominio después del signo @' });
   }
 
   const emailDomain = email.substring(email.indexOf('@'));
   if (!allowedDomains.includes(emailDomain)) {
-    res.status(400).json({ message: 'Introduzca un dominio correcto' });
+    return res.status(400).json({ message: 'Introduzca un dominio correcto' });
   }
 
-  if (password.length === 25) {
-    res.status(400).json({ message: 'La cantidad máxima es de 25 caracteres' });
-  }
-
+  // Corregir lógica de validación de contraseña
   if (password.length < 8 || password.length > 25) {
-    res.status(400).json({ message: 'La contraseña debe tener entre 8 y 25 caracteres' });
+    return res.status(400).json({ message: 'La contraseña debe tener entre 8 y 25 caracteres' });
   }
 
   next();

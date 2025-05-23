@@ -18,6 +18,8 @@ export const createUser = async (data: {
   const salt = await bcrypt.genSalt(10)
   const hashedPassword = await bcrypt.hash(data.contraseña, salt)
 
+  console.log("Creando usuario con contraseña hasheada:", hashedPassword.substring(0, 20) + "...");
+
   return prisma.usuario.create({
     data: {
       nombre: data.nombre,
@@ -31,6 +33,29 @@ export const createUser = async (data: {
       host: false,
     },
   })
+}
+
+export const validatePassword = async (inputPassword: string, hashedPassword: string): Promise<boolean> => {
+  try {
+    console.log("🔍 Debug validatePassword:");
+    console.log("Input password:", inputPassword);
+    console.log("Hashed password:", hashedPassword);
+    console.log("¿Es hash válido?", hashedPassword.startsWith('$2a$') || hashedPassword.startsWith('$2b$'));
+    
+    // Si la contraseña no está hasheada, es un problema
+    if (!hashedPassword.startsWith('$2a$') && !hashedPassword.startsWith('$2b$')) {
+      console.error("❌ ERROR: La contraseña en BD no está hasheada correctamente");
+      return false;
+    }
+    
+    const result = await bcrypt.compare(inputPassword, hashedPassword);
+    console.log("🔐 Resultado de bcrypt.compare:", result);
+    
+    return result;
+  } catch (error) {
+    console.error("❌ Error al comparar contraseñas:", error);
+    return false;
+  }
 }
 
 export const updateGoogleProfile = async (email: string, nombre: string, apellido: string, fechaNacimiento: string) => {
@@ -61,9 +86,7 @@ export const updateGoogleProfile = async (email: string, nombre: string, apellid
   return updatedUser
 }
 
-export const validatePassword = async (inputPassword: string, hashedPassword: string) => {
-  return bcrypt.compare(inputPassword, hashedPassword)
-}
+
 
 export const getUserById = async (idUsuario: number) => {
   return await prisma.usuario.findUnique({

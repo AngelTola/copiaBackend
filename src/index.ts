@@ -3,12 +3,14 @@ import cors from "cors"
 import helmet from "helmet"
 import session from "express-session"
 import passport from "passport"
-import "./config/passport" // Importar configuración de passport
+import "./config/passport"
 
 import autoRoutes from "./routes/auto.routes"
 import passwordRoutes from "./routes/password.routes"
 import registroHostRoutes from "./routes/registroHost.routes"
 import authRoutes from "./routes/auth.routes"
+
+require('dotenv').config();
 
 const app = express()
 const PORT = process.env.PORT || 4000

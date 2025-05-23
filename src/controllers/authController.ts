@@ -76,51 +76,48 @@ export const updateGoogleProfile = async (req: Request, res: Response) => {
 }
 
 export const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body
+  const { email, password } = req.body;
 
   try {
-    const user = await authService.findUserByEmail(email)
+    const user = await authService.findUserByEmail(email);
 
     if (!user) {
-      res.status(401).json({ message: "Correo ingresado no se encuentra en el sistema." })
-      return
+      return res.status(401).json({ message: "Correo ingresado no se encuentra en el sistema." });
     }
 
-    // Si el usuario se registró con Google, no debería poder iniciar sesión con contraseña
     if (user.registradoCon === "google") {
-      res.status(401).json({
+      return res.status(401).json({
         message: "Esta cuenta fue registrada con Google. Por favor, inicia sesión con Google.",
-      })
-      return
+      });
     }
 
-    const isValid = await authService.validatePassword(password, user.contraseña ?? "")
+    const isValid = await authService.validatePassword(password, user.contraseña ?? "");
 
     if (!isValid) {
-      res.status(401).json({ message: "Los datos no son válidos" })
-      return
+      return res.status(401).json({ message: "Datos invalidos" });
     }
 
     // Token
     const token = generateToken({
       idUsuario: user.idUsuario,
       email: user.email,
-      nombreCompleto: user.nombre + " " + user.apellido,
-    })
+      nombreCompleto: user.nombre + " " + user.apellido
+    });
 
-    res.json({
+    console.info("Login exitoso para usuario:", email);
+    return res.json({
       message: "Login exitoso",
       token,
       user: {
         email: user.email,
-        nombre_completo: user.nombre + " " + user.apellido,
+        nombreCompleto: user.nombre + " " + user.apellido,
       },
-    })
+    });
   } catch (error) {
-    console.error(error)
-    res.status(500).json({ message: "Error en el servidor" })
+    console.error("Error inesperado en login:", error);
+    return res.status(500).json({ message: "Error en el servidor" });
   }
-}
+};
 
 export const me = async (req: Request, res: Response) => {
   const { idUsuario } = req.user as { idUsuario: number }
