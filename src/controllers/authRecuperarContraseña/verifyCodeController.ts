@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 const userData = { emailBD: '', codeBD: '',};
 
 export const codeverifyController = async (data: { emailBD: string, codeBD: string }): Promise<any> => {
+  
   userData.emailBD = data.emailBD;
   userData.codeBD = data.codeBD;
 }

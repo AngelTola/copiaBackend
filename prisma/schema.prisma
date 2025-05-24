@@ -19,6 +19,7 @@ model Usuario {
   fechaRegistro       DateTime           @default(now())
   verificado          Boolean            @default(false)
   host                Boolean            @default(false)
+  driverBool          Boolean            @default(false)
   fotoPerfil          String?
   codigoVerificacion  String?
   bloqueado           Boolean            @default(false)
@@ -26,6 +27,10 @@ model Usuario {
   intentosFallidos    Int                @default(0)
   direccion           String?
   esAdmin             Boolean            @default(false)
+
+  edicionesNombre     Int       @default(0)
+  edicionesFecha      Int       @default(0)
+  edicionesTelefono   Int       @default(0)
 
   verificaciones      Verificaciones[]
   terminosCondiciones TerminosCondiciones[]
@@ -40,7 +45,7 @@ model Usuario {
   driver            Driver?
   
   // Relación muchos a muchos con drivers asignados
-  driversAsignados  UsuarioDriver[]
+  driversAsignados       UsuarioDriver[]
 
   metodoPago             MetodoPago?
   numeroTarjeta          String?       
@@ -77,11 +82,17 @@ model Driver {
   idDriver          Int                @id @default(autoincrement())
   idUsuario         Int                @unique
   usuario           Usuario            @relation(fields: [idUsuario], references: [idUsuario], onDelete: Cascade)
-  licencia          String             
+  sexo              String
+  telefono          String
+  licencia          String 
+  fechaEmision      DateTime            
   fechaExpiracion   DateTime           
   tipoLicencia      String?            
   añosExperiencia   Int?               
   disponible        Boolean            @default(true)
+
+  anversoUrl        String
+  reversoUrl        String
   
   asignadoA         UsuarioDriver[]
   
@@ -371,12 +382,13 @@ enum PrioridadNotificacion {
   MEDIA
   ALTA
 }
-
+// Enum para registrado_con
 enum RegistradoCon {
   email
   google
 }
 
+// Enum para tipo en verificaciones
 enum TipoVerificacion {
   recuperacion
   verificacion

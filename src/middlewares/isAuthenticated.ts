@@ -1,16 +1,8 @@
-/* import { Request, Response, NextFunction } from "express";
-
-export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    return next();
-  }
-  return res.status(401).json({ message: "Usuario no autenticado" });
-}; */
 
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+export const isAuthenticated = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -22,8 +14,9 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!);
     req.user = decoded; // 👈 Aquí queda el usuario
-    next();
-  } catch (error) {
-    res.status(403).json({ message: 'Token inválido' });
-  }
+      next();
+    } catch (error) {
+      res.status(403).json({ message: 'Token inválido' });
+      return;
+    }
 };
