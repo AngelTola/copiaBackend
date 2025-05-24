@@ -10,19 +10,18 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      callbackURL: process.env.GOOGLE_CALLBACK_URL || "http://localhost:4000/api/auth/google/callback",
+      callbackURL: process.env.GOOGLE_CALLBACK_URL || "http://localhost:3001/api/auth/google/callback",
     },
 
     async (_accessToken, _refreshToken, profile, done) => {
       try {
         const email = profile.emails?.[0].value;
-        const name = profile.name?.givenName ?? "";
-        const apellido = profile.name?.familyName ?? "";
+        const name = profile.displayName;
 
         if (!email)
           return done(new Error("No se pudo obtener el email de Google"), false);
 
-        const user = await findOrCreateGoogleUser(email, name, apellido);
+        const user = await findOrCreateGoogleUser(email, name);
 
         if (!user.idUsuario) {
           return done(null, false, {
@@ -43,7 +42,7 @@ passport.use(
 );
 
 passport.serializeUser((user: any, done) => {
-  done(null, user.email);
+  done(null, user.email); // 👈 guardamos solo el email
 });
 
 passport.deserializeUser(async (email: string, done) => {

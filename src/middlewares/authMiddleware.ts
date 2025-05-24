@@ -6,8 +6,7 @@ import jwt from 'jsonwebtoken';
 export interface JwtPayload {
   idUsuario: number;
   email: string;
-  nombre: string;
-  apellido: string;
+  nombreCompleto: string;
 }
 
 export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
@@ -39,7 +38,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
-    req.user = decoded; // Aquí solo ponemos el payload del token
+    req.user = decoded;
     next();
   } catch (error) {
     res.status(401).json({ message: 'Token inválido' });

@@ -2,7 +2,7 @@
 import nodemailer from 'nodemailer';
 import { PrismaClient } from '@prisma/client';
 import { RequestHandler } from 'express';
-import { codeverifyController} from './verifyCodeController';
+import { codeverifyController, verifyCode } from './verifyCodeController';
 import { getEmail } from './resetPasswordController';
 
 

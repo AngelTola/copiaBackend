@@ -11,8 +11,8 @@ const sanitize = (name: string) => {
 // ✅ Configuración de almacenamiento dinámica
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const user = req.user as { idUsuario: number; nombre: string; apellido: string };
-    const nombreSanitizado = sanitize(user.nombre + " " + user.apellido);
+    const user = req.user as { idUsuario: number; nombreCompleto: string };
+    const nombreSanitizado = sanitize(user.nombreCompleto);
     
     // Usa el campo del archivo para determinar la carpeta
     const tipo = file.fieldname === 'qrImage' ? 'qr' : 'vehiculo';

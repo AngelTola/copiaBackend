@@ -1,10 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-/**
- * Registra un nuevo driver y asigna una lista de renters.
- * @param data Datos del driver + lista de IDs de renters
- */
 export const registrarDriverCompleto = async (data: {
   idUsuario: number;
   sexo: string;
@@ -13,7 +9,6 @@ export const registrarDriverCompleto = async (data: {
   categoria: string;
   fechaEmision: Date;
   fechaExpiracion: Date;
-  driverBool: boolean;
   anversoUrl: string;
   reversoUrl: string;
   rentersIds: number[];
@@ -26,7 +21,6 @@ export const registrarDriverCompleto = async (data: {
     categoria,
     fechaEmision,
     fechaExpiracion,
-    driverBool,
     anversoUrl,
     reversoUrl,
     rentersIds
@@ -41,7 +35,8 @@ export const registrarDriverCompleto = async (data: {
     where: { idUsuario },
     select: { telefono: true }
   });
- const telefonoFinal = usuario?.telefono ? String(usuario.telefono) : telefono;
+
+  const telefonoFinal = usuario?.telefono ? String(usuario.telefono) : telefono;
 
   return await prisma.$transaction([
     // 1. Crear al driver
@@ -68,18 +63,23 @@ export const registrarDriverCompleto = async (data: {
             data: { telefono }
           })
         ]),
+
+    // 3. Marcar al usuario como driver (driverBool = true)
     prisma.usuario.update({
       where: { idUsuario },
       data: { driverBool: true }
     }),
-   // 4. Asignar renters
+
+    // 4. Asignar renters
     ...rentersIds.map((renterId) =>
       prisma.usuario.update({
         where: { idUsuario: renterId },
         data: {
           assignedToDriver: idUsuario
-        }     })
-    ) ]);
+        }
+      })
+    )
+  ]);
 };
  
 

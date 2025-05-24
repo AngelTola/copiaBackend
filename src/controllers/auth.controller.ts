@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client"
+import { PrismaClient, Usuario } from "@prisma/client"
 import type { Request, Response } from "express"
 import * as authService from "@/services/auth.service"
 import { generateToken } from "@/utils/generateToken"
@@ -10,7 +10,7 @@ import fs from "fs"
 const prisma = new PrismaClient()
 
 export const register = async (req: Request, res: Response) => {
-  const { nombre, apellido, email, contraseña, fechaNacimiento, telefono } = req.body
+  const { nombreCompleto, email, contraseña, fechaNacimiento, telefono } = req.body
 
   try {
     const existingUser = await authService.findUserByEmail(email)
@@ -20,8 +20,7 @@ export const register = async (req: Request, res: Response) => {
     }
 
     const newUser = await authService.createUser({
-      nombre,
-      apellido,
+      nombreCompleto,
       email,
       contraseña,
       fechaNacimiento,
@@ -39,7 +38,7 @@ export const register = async (req: Request, res: Response) => {
 }
 
 export const updateGoogleProfile = async (req: Request, res: Response) => {
-  const { nombre, apellido, fechaNacimiento, telefono } = req.body
+  const { nombre, fechaNacimiento, telefono } = req.body
   const email = req.body.email // Obtener email del body, no del user
 
   if (!email) {
@@ -50,13 +49,13 @@ export const updateGoogleProfile = async (req: Request, res: Response) => {
   console.log(`📝 Actualizando perfil de Google para: ${email}`)
 
   try {
-    const updatedUser = await authService.updateGoogleProfile(email, nombre, apellido, fechaNacimiento)
+    const updatedUser = await authService.updateGoogleProfile(email, nombre, fechaNacimiento)
 
     // Generar token para el usuario actualizado
     const token = generateToken({
       idUsuario: updatedUser.idUsuario,
       email: updatedUser.email,
-      nombreCompleto: updatedUser.nombre + " " + updatedUser.apellido,
+      nombreCompleto: updatedUser.nombreCompleto
     })
 
     res.json({
@@ -64,7 +63,7 @@ export const updateGoogleProfile = async (req: Request, res: Response) => {
       token,
       user: {
         email: updatedUser.email,
-        nombreCompleto: updatedUser.nombre + " " + updatedUser.apellido,
+        nombreCompleto: updatedUser.nombreCompleto
       },
     })
   } catch (error: any) {
@@ -103,7 +102,7 @@ export const login = async (req: Request, res: Response) => {
     const token = generateToken({
       idUsuario: user.idUsuario,
       email: user.email,
-      nombreCompleto: user.nombre + " " + user.apellido
+      nombreCompleto: user.nombreCompleto
     });
 
     console.info("Login exitoso para usuario:", email);
@@ -112,7 +111,7 @@ export const login = async (req: Request, res: Response) => {
       token,
       user: {
         email: user.email,
-        nombreCompleto: user.nombre + " " + user.apellido,
+        nombreCompleto: user.nombreCompleto,
       },
     });
   } catch (error) {
@@ -130,8 +129,7 @@ export const me = async (req: Request, res: Response) => {
       where: { idUsuario },
       select: {
         idUsuario: true,
-        nombre: true,
-        apellido: true,
+        nombreCompleto: true,
         email: true,
         telefono: true,
         fechaNacimiento: true,
@@ -241,23 +239,26 @@ export const deleteProfilePhoto = async (req: Request, res: Response) => {
 }
 
 export const updateUserField = async (req: Request, res: Response) => {
+  const camposPermitidos = ['nombreCompleto', 'telefono', 'fechaNacimiento'] as const;
+  type CampoEditable = typeof camposPermitidos[number];
+
   const { campo, valor }: { campo: CampoEditable; valor: string } = req.body;
   const { idUsuario } = req.user as { idUsuario: number };
 
-  if (!campo || !valor) {
-     res.status(400).json({ message: 'Campo y valor son obligatorios.' });
+  if (!campo || valor === undefined || valor === null) {
+    res.status(400).json({ message: 'Campo y valor son obligatorios.' });
+    return;
   }
 
-  const camposPermitidos = ['nombre_completo', 'telefono', 'fecha_nacimiento'] as const;
-  type CampoEditable = typeof camposPermitidos[number];
   if (!camposPermitidos.includes(campo)) {
-     res.status(400).json({ message: 'Campo no permitido.' });
+    res.status(400).json({ message: 'Campo no permitido.' });
+    return;
   }
 
   const campoContadorMap: Record<CampoEditable, keyof Usuario> = {
-    nombre_completo: 'ediciones_nombre',
-    telefono: 'ediciones_telefono',
-    fecha_nacimiento: 'ediciones_fecha',
+    nombreCompleto: 'edicionesNombre',
+    telefono: 'edicionesTelefono',
+    fechaNacimiento: 'edicionesFecha',
   };
   const campoContador = campoContadorMap[campo];
 
@@ -271,58 +272,89 @@ export const updateUserField = async (req: Request, res: Response) => {
     }) as any;
 
     if (!user) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+      res.status(404).json({ message: 'Usuario no encontrado' });
+      return;
     }
 
     if (user[campoContador] >= 3) {
-      return res.status(403).json({ message: 'Has alcanzado el límite de 3 ediciones para este campo. Para más cambios, contacta al soporte.' });
-    }
-
-    const valorActual = user[campo];
-    const nuevoValor = campo === 'telefono' ? parseInt(valor, 10) : campo === 'fecha_nacimiento' ? new Date(valor) : valor;
-
-    if (valorActual?.toString() === nuevoValor?.toString()) {
-      return res.status(200).json({
-        message: 'No hubo cambios en el valor.',
-        edicionesRestantes: 3 - user[campoContador]
+      res.status(403).json({
+        message: 'Has alcanzado el límite de 3 ediciones para este campo. Para más cambios, contacta al soporte.'
       });
+      return;
     }
 
-    // Validaciones personalizadas
-    if (campo === 'nombre_completo') {
+    if (campo === 'nombreCompleto') {
       if (typeof valor !== 'string' || valor.length < 3 || valor.length > 50) {
-        return res.status(400).json({ message: 'El nombre debe tener entre 3 y 50 caracteres.' });
+        res.status(400).json({ message: 'El nombre debe tener entre 3 y 50 caracteres.' });
+        return;
       }
       const soloLetrasRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/;
       if (!soloLetrasRegex.test(valor)) {
-        return res.status(400).json({ message: 'El nombre solo puede contener letras y espacios.' });
+        res.status(400).json({ message: 'El nombre solo puede contener letras y espacios.' });
+        return;
       }
       if (/\s{2,}/.test(valor)) {
-        return res.status(400).json({ message: 'El nombre no debe tener más de un espacio consecutivo.' });
+        res.status(400).json({ message: 'El nombre no debe tener más de un espacio consecutivo.' });
+        return;
       }
       if (/^\s|\s$/.test(valor)) {
-        return res.status(400).json({ message: 'El nombre no debe comenzar ni terminar con espacios.' });
+        res.status(400).json({ message: 'El nombre no debe comenzar ni terminar con espacios.' });
+        return;
       }
     }
 
     if (campo === 'telefono') {
-      const telefonoStr = valor.toString();
+      const telefonoStr = valor.toString().trim();
       if (!/^[0-9]*$/.test(telefonoStr)) {
-        return res.status(400).json({ message: 'Formato inválido, ingrese solo números.' });
+        res.status(400).json({ message: 'Formato inválido, ingrese solo números.' });
+        return;
       }
       if (!/^[0-9]{8}$/.test(telefonoStr)) {
-        return res.status(400).json({ message: 'El teléfono debe ser un número de 8 dígitos.' });
+        res.status(400).json({ message: 'El teléfono debe ser un número de 8 dígitos.' });
+        return;
       }
       if (!/^[67]/.test(telefonoStr)) {
-        return res.status(400).json({ message: 'El teléfono debe comenzar con 6 o 7.' });
+        res.status(400).json({ message: 'El teléfono debe comenzar con 6 o 7.' });
+        return;
       }
     }
 
-    if (campo === 'fecha_nacimiento') {
+    if (campo === 'fechaNacimiento') {
       const fechaValida = Date.parse(valor);
       if (isNaN(fechaValida)) {
-        return res.status(400).json({ message: 'Fecha inválida.' });
+        res.status(400).json({ message: 'Fecha inválida.' });
+        return;
       }
+    }
+
+    // Conversión de valores
+    let nuevoValor: any;
+    if (campo === 'telefono') {
+      nuevoValor = valor.toString().trim();
+    } else if (campo === 'fechaNacimiento') {
+      nuevoValor = new Date(valor);
+    } else {
+      nuevoValor = valor;
+    }
+
+    const valorActual = user[campo];
+
+    // Comparación
+    let valoresIguales = false;
+    if (campo === 'telefono') {
+      valoresIguales = valorActual === nuevoValor;
+    } else if (campo === 'fechaNacimiento') {
+      valoresIguales = valorActual?.getTime() === nuevoValor?.getTime();
+    } else {
+      valoresIguales = valorActual === nuevoValor;
+    }
+
+    if (valoresIguales) {
+      res.status(200).json({
+        message: 'No hubo cambios en el valor.',
+        edicionesRestantes: 3 - user[campoContador]
+      });
+      return;
     }
 
     const updatedUser = await prisma.usuario.update({
@@ -341,9 +373,9 @@ export const updateUserField = async (req: Request, res: Response) => {
       infoExtra = 'Has alcanzado el límite de 3 ediciones para este campo. Para más cambios, contacta al soporte.';
     }
 
-    return res.json({
-      message: `$${
-        campo === 'nombre_completo' ? 'Nombre' :
+    res.json({
+      message: `${
+        campo === 'nombreCompleto' ? 'Nombre' :
         campo === 'telefono' ? 'Teléfono' :
         'Fecha de nacimiento'
       } actualizado correctamente`,
@@ -352,12 +384,13 @@ export const updateUserField = async (req: Request, res: Response) => {
       user: {
         idUsuario: updatedUser.idUsuario,
         [campo]: updatedUser[campo],
-        [campoContador]: updatedUser[campoContador],
+        [campoContador]: updatedUser[campoContador as keyof typeof updatedUser],
       },
     });
   } catch (error) {
     console.error('Error al actualizar campo:', error);
-     res.status(500).json({ message: 'Error al actualizar el campo.' });
+    res.status(500).json({ message: 'Error al actualizar el campo.' });
+    return;
   }
 };
 
@@ -379,8 +412,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
 
     res.status(200).json({
       idUsuario: user.idUsuario,
-      nombre: user.nombre,
-      apellido: user.apellido,
+      nombreCompleto: user.nombreCompleto,
       email: user.email,
       telefono: user.telefono,
       fechaNacimiento: user.fechaNacimiento,

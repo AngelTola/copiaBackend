@@ -1,19 +1,18 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 
-export interface AuthenticatedRequest extends Request {
+// Interfaz extendida para agregar la propiedad `user`
+interface AuthenticatedRequest extends Request {
   user?: { idUsuario: number };
 }
 
-export const authDriverMiddleware = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
+// Implementación del middleware
+const authDriverMiddleware: RequestHandler = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Token no proporcionado" });
+    res.status(401).json({ message: "Token no proporcionado" });
+    return;
   }
 
   const token = authHeader.split(" ")[1];
@@ -24,9 +23,14 @@ export const authDriverMiddleware = (
       process.env.JWT_SECRET || "clave_secreta"
     ) as { idUsuario: number };
 
-    req.user = { idUsuario: decoded.idUsuario };
+    // TypeScript no sabe que `req` es `AuthenticatedRequest`, así que lo forzamos aquí
+    (req as AuthenticatedRequest).user = { idUsuario: decoded.idUsuario };
+
     next();
   } catch (error) {
-    return res.status(403).json({ message: "Token inválido" });
+    res.status(403).json({ message: "Token inválido" });
   }
 };
+
+export default authDriverMiddleware;
+export type { AuthenticatedRequest };

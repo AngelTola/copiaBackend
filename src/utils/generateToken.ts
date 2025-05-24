@@ -5,3 +5,5 @@ export const generateToken = (payload: object) => {
     expiresIn: '1d' // 1 día de expiración
   });
 };
+
+//Instala por si no lo tienens pnpm add jsonwebtoken

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { getDriverProfile } from "../controllers/authVisualizarDriver/VisualizarDriver.controller";
-import { authDriverMiddleware } from "../middlewares/authDriverMiddleware";
+import getDriverProfile from "../controllers/authVisualizarDriver/VisualizarDriver.controller";
+import authDriverMiddleware from "../middlewares/authDriverMiddleware";
 
 const router = Router();
 

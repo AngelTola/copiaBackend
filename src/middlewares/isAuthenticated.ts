@@ -7,8 +7,8 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    res.status(401).json({ message: 'Token no proporcionado' });
-    return;
+     res.status(401).json({ message: 'Token no proporcionado' });
+     return;
   }
 
   try {

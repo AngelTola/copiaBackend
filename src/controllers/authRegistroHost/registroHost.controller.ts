@@ -11,18 +11,17 @@ export const registrarHostCompletoController = async (req: Request, res: Respons
       numeroTarjeta,
       fechaExpiracion,
       titular,
-      detallesMetodoPago,
+      detallesMetodo,
     } = req.body;
 
     //const imagenes = (req.files as any).imagenes || [];
     const qrImage = (req.files as any).qrImage?.[0];
 
-    /*
-    if (!placa || !soat || imagenes.length < 3) {
+    /*if (!placa || !soat || imagenes.length < 3) {
       res.status(400).json({ message: "Faltan datos del vehículo" });
       return;
     }
-    */
+      */
 
     const tipoFinal =
       tipo === "card" ? "TARJETA_DEBITO" : tipo === "qr" ? "QR" : tipo === "cash" ? "EFECTIVO" : null;
@@ -42,7 +41,7 @@ export const registrarHostCompletoController = async (req: Request, res: Respons
       fechaExpiracion,
       titular,
       imagenQr: qrImage?.filename,
-      detallesMetodoPago: detallesMetodoPago,
+      detallesMetodoPago: detallesMetodo,
     });
 
     // ✅ No retornes res.status(...), simplemente termina con void

@@ -8,8 +8,7 @@ export const obtenerRentersDisponibles = async (req: Request, res: Response) => 
     const renters = await prisma.usuario.findMany({
       select: {
         idUsuario: true,
-        nombre: true,
-        apellido: true,
+        nombreCompleto: true,
         email: true,
         telefono: true,
         fotoPerfil: true 

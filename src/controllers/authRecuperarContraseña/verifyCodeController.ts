@@ -6,10 +6,20 @@ const prisma = new PrismaClient();
 const userData = { emailBD: '', codeBD: '',};
 
 export const codeverifyController = async (data: { emailBD: string, codeBD: string }): Promise<any> => {
-  
+  const { emailBD, codeBD } = data;
+  console.log('Datos en el controlador de verificación de código:', data);
+  // Asignar las variables locales dentro de la función
   userData.emailBD = data.emailBD;
   userData.codeBD = data.codeBD;
 }
+
+/*/ Function to verify the code received in the request
+export const verifyCode = async (req: Request): Promise<string> => {
+  const { code } = req.body; // Get the code from request body
+  console.log('🧪 Código recibido:', code, userData.codeBD); // Log the received code
+  return code; // Return the received code for comparison
+};*/
+
 
 export const verifyCode = async (req: Request, res: Response) => {
   const { code } = req.body;

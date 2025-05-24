@@ -66,8 +66,7 @@ export const getAutoId = async (req: Request, res: Response): Promise<void> => {
           propietario: {
             select: {
               idUsuario: true,
-              nombre: true,
-              apellido: true,
+              nombreCompleto: true,
               telefono: true,
             },
           },
@@ -116,8 +115,7 @@ export const getComentarios = async (req: Request, res: Response): Promise<void>
           usuario: {
             select: {
               idUsuario: true,
-              nombre: true,
-              apellido: true, 
+              nombreCompleto: true,
             },
           },
         },

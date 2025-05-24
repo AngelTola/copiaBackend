@@ -9,8 +9,7 @@ datasource db {
 
 model Usuario {
   idUsuario           Int                @id @default(autoincrement())
-  nombre              String
-  apellido            String
+  nombreCompleto      String
   email               String             @unique
   contraseña          String?
   fechaNacimiento     DateTime? 
@@ -158,8 +157,8 @@ model Auto {
   idUbicacion       Int
   ubicacion         Ubicacion          @relation(fields: [idUbicacion], references: [idUbicacion])
   propietario       Usuario            @relation(fields: [idPropietario], references: [idUsuario])
-  marca             String
-  modelo            String
+  marca             String?
+  modelo            String?
   descripcion       String?
   precioRentaDiario Decimal            @db.Decimal(10, 2)
   montoGarantia     Decimal            @db.Decimal(10, 2)

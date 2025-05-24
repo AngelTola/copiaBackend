@@ -1,29 +1,25 @@
-import { PrismaClient } from "@prisma/client"
-import bcrypt from "bcryptjs"
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 export const findUserByEmail = async (email: string) => {
-  return prisma.usuario.findUnique({ where: { email } })
-}
+  return prisma.usuario.findUnique({ where: { email } });
+};
 
 export const createUser = async (data: {
-  nombre: string
-  apellido: string
-  email: string
-  contraseña: string
-  fechaNacimiento: string
-  telefono?: string | null
+  nombreCompleto: string;
+  email: string;
+  contraseña: string;
+  fechaNacimiento: string;
+  telefono?: string;
 }) => {
-  const salt = await bcrypt.genSalt(10)
-  const hashedPassword = await bcrypt.hash(data.contraseña, salt)
-
-  console.log("Creando usuario con contraseña hasheada:", hashedPassword.substring(0, 20) + "...");
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(data.contraseña, salt);
 
   return prisma.usuario.create({
     data: {
-      nombre: data.nombre,
-      apellido: data.apellido,
+      nombreCompleto: data.nombreCompleto,
       email: data.email,
       contraseña: hashedPassword,
       fechaNacimiento: new Date(data.fechaNacimiento),
@@ -31,112 +27,91 @@ export const createUser = async (data: {
       registradoCon: "email",
       verificado: false,
       host: false,
+      //driver: false,
     },
-  })
-}
+  });
+};
 
-export const validatePassword = async (inputPassword: string, hashedPassword: string): Promise<boolean> => {
-  try {
-    console.log("🔍 Debug validatePassword:");
-    console.log("Input password:", inputPassword);
-    console.log("Hashed password:", hashedPassword);
-    console.log("¿Es hash válido?", hashedPassword.startsWith('$2a$') || hashedPassword.startsWith('$2b$'));
-    
-    // Si la contraseña no está hasheada, es un problema
-    if (!hashedPassword.startsWith('$2a$') && !hashedPassword.startsWith('$2b$')) {
-      console.error("ERROR: La contraseña en BD no está hasheada correctamente");
-      return false;
-    }
-    
-    const result = await bcrypt.compare(inputPassword, hashedPassword);
-    console.log("Resultado de bcrypt.compare:", result);
-    
-    return result;
-  } catch (error) {
-    console.error("Error al comparar contraseñas:", error);
-    return false;
-  }
-}
-
-export const updateGoogleProfile = async (email: string, nombre: string, apellido: string, fechaNacimiento: string) => {
-  console.log(`Actualizando perfil de Google: ${email}`)
+export const updateGoogleProfile = async (
+  email: string,
+  nombreCompleto: string,
+  fechaNacimiento: string
+) => {
 
   const existingUser = await prisma.usuario.findUnique({
     where: { email },
-  })
+  });
 
-  if (!existingUser) {
-    throw new Error("Usuario no encontrado")
-  }
-
-  if (existingUser.registradoCon === "email") {
-    throw new Error("Este correo ya está registrado con email")
+  if (existingUser && existingUser.registradoCon === "email") {
+    throw new Error("Este correo ya está registrado con email");
   }
 
   const updatedUser = await prisma.usuario.update({
     where: { email },
     data: {
-      nombre,
-      apellido,
+      nombreCompleto,
       fechaNacimiento: new Date(fechaNacimiento),
     },
-  })
+  });
 
-  console.log(`Perfil actualizado: ${email}`)
-  return updatedUser
-}
+  return updatedUser;
+};
 
-
+export const validatePassword = async (
+  inputPassword: string,
+  hashedPassword: string
+) => {
+  return bcrypt.compare(inputPassword, hashedPassword);
+};
 
 export const getUserById = async (idUsuario: number) => {
   return await prisma.usuario.findUnique({
     where: { idUsuario },
-    select: {
+    select: { // Evita traer la contraseña u otros campos sensibles
       idUsuario: true,
-      nombre: true,
-      apellido: true,
+      nombreCompleto: true,
       email: true,
       telefono: true,
       fechaNacimiento: true,
     },
-  })
-}
-
-export const findOrCreateGoogleUser = async (email: string, name: string, apellido: string) => {
-  console.log(`🔍 Buscando usuario con email: ${email}`)
-
-  const existingUser = await prisma.usuario.findUnique({ where: { email } })
-
-  if (existingUser) {
-    console.log(`Usuario encontrado: ${email}`)
-
-    if (existingUser.registradoCon === "email") {
-      console.log(`El email ${email} ya está registrado con email`)
-      const error: any = new Error(
-        "Este correo ya está registrado con email. Por favor inicia sesión con tu contraseña.",
-      )
-      error.name = "EmailAlreadyRegistered"
-      throw error
-    }
-
-    return existingUser
-  }
-
-  console.log(`Creando nuevo usuario Google: ${email}`)
+  });
+};
+export const createUserWithGoogle = async (email: string, name: string) => {
   return prisma.usuario.create({
     data: {
       email,
-      nombre: name,
-      apellido: apellido,
+      nombreCompleto: name,
       registradoCon: "google",
       verificado: true,
-      // Valores por defecto para evitar errores
-      fechaNacimiento: new Date("2000-01-01"), // Fecha temporal
-      contraseña: "", // Contraseña vacía para usuarios de Google
     },
-  })
-}
+  });
+};
+
+export const findOrCreateGoogleUser = async (email: string, name: string) => {
+  const existingUser = await prisma.usuario.findUnique({ where: { email } });
+
+  if (existingUser) {
+    
+    if (existingUser && existingUser.registradoCon === "email") {
+      const error: any = new Error("Este correo ya está registrado con email.");
+      error.name = "EmailAlreadyRegistered";
+      throw error;
+    }
+
+    if (existingUser) return existingUser;
+
+  }
+
+  return prisma.usuario.create({
+    data: {
+      email,
+      nombreCompleto: name,
+      registradoCon: "google",
+      verificado: true,
+    },
+  });
+};
 
 export const findUserByPhone = async (telefono: string) => {
-  return prisma.usuario.findFirst({ where: { telefono } })
-}
+  return prisma.usuario.findFirst({ where: { telefono } });
+};

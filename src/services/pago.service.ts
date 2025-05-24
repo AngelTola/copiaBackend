@@ -5,7 +5,7 @@ export const registrarHostCompleto = async (data: {
   idUsuario: number;
   placa: string;
   soat: string;
-  //imagenes: boolean;
+  //imagenes: string[];
   tipo: "TARJETA_DEBITO" | "QR" | "EFECTIVO";
   numeroTarjeta?: string;
   fechaExpiracion?: string;
@@ -16,16 +16,14 @@ export const registrarHostCompleto = async (data: {
   const { idUsuario, ...resto } = data;
 
   return await prisma.$transaction([
-    /*prisma.auto.create({
+    prisma.auto.create({
       data: {
         placa: resto.placa,
         soat: resto.soat,
-       // imagenes: resto.imagenes,
+        //imagenes: resto.imagenes,
         propietario: { connect: { idUsuario } },
       },
     }),
-    */
-
     prisma.usuario.update({
       where: { idUsuario },
       data: {
@@ -35,6 +33,7 @@ export const registrarHostCompleto = async (data: {
         titular: resto.titular,
         imagenQr: resto.imagenQr,
         detallesMetodoPago: resto.detallesMetodoPago,
+        host: true,
       },
     }),
   ]);
