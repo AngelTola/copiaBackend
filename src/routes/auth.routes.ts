@@ -36,12 +36,12 @@ router.get(
       const user = req.user as any
 
       if (!user) {
-        console.error("❌ No se encontró usuario después de autenticación")
+        console.error("No se encontró usuario después de autenticación")
         res.redirect(`${CLIENT_URL}/home?error=google`)
         return
       }
 
-      console.log("👤 Usuario autenticado:", user.email)
+      console.log("Usuario autenticado:", user.email)
 
       // Verificar si el usuario necesita completar su perfil
       const needsProfile =
@@ -51,20 +51,19 @@ router.get(
         !user.apellido
 
       if (needsProfile) {
-        console.log("👤 Usuario necesita completar perfil:", user.email)
+        console.log("Usuario necesita completar perfil:", user.email)
         res.redirect(`${CLIENT_URL}/home?googleComplete=true&email=${encodeURIComponent(user.email)}`)
       } else {
-        console.log("✅ Usuario con perfil completo:", user.email)
+        console.log("Usuario con perfil completo:", user.email)
         res.redirect(`${CLIENT_URL}/home/homePage`)
       }
     } catch (error) {
-      console.error("❌ Error en callback de Google:", error)
+      console.error("Error en callback de Google:", error)
       res.redirect(`${CLIENT_URL}/home?error=google`)
     }
   },
 )
 
-// Rutas de éxito/fallo de autenticación
 router.get("/auth/success", (req: Request, res: Response) => {
   if (req.isAuthenticated()) {
     res.json({

@@ -44,22 +44,22 @@ export const validatePassword = async (inputPassword: string, hashedPassword: st
     
     // Si la contraseña no está hasheada, es un problema
     if (!hashedPassword.startsWith('$2a$') && !hashedPassword.startsWith('$2b$')) {
-      console.error("❌ ERROR: La contraseña en BD no está hasheada correctamente");
+      console.error("ERROR: La contraseña en BD no está hasheada correctamente");
       return false;
     }
     
     const result = await bcrypt.compare(inputPassword, hashedPassword);
-    console.log("🔐 Resultado de bcrypt.compare:", result);
+    console.log("Resultado de bcrypt.compare:", result);
     
     return result;
   } catch (error) {
-    console.error("❌ Error al comparar contraseñas:", error);
+    console.error("Error al comparar contraseñas:", error);
     return false;
   }
 }
 
 export const updateGoogleProfile = async (email: string, nombre: string, apellido: string, fechaNacimiento: string) => {
-  console.log(`🔄 Actualizando perfil de Google: ${email}`)
+  console.log(`Actualizando perfil de Google: ${email}`)
 
   const existingUser = await prisma.usuario.findUnique({
     where: { email },
@@ -82,7 +82,7 @@ export const updateGoogleProfile = async (email: string, nombre: string, apellid
     },
   })
 
-  console.log(`✅ Perfil actualizado: ${email}`)
+  console.log(`Perfil actualizado: ${email}`)
   return updatedUser
 }
 
@@ -108,10 +108,10 @@ export const findOrCreateGoogleUser = async (email: string, name: string, apelli
   const existingUser = await prisma.usuario.findUnique({ where: { email } })
 
   if (existingUser) {
-    console.log(`🔍 Usuario encontrado: ${email}`)
+    console.log(`Usuario encontrado: ${email}`)
 
     if (existingUser.registradoCon === "email") {
-      console.log(`❌ El email ${email} ya está registrado con email`)
+      console.log(`El email ${email} ya está registrado con email`)
       const error: any = new Error(
         "Este correo ya está registrado con email. Por favor inicia sesión con tu contraseña.",
       )
@@ -122,7 +122,7 @@ export const findOrCreateGoogleUser = async (email: string, name: string, apelli
     return existingUser
   }
 
-  console.log(`➕ Creando nuevo usuario Google: ${email}`)
+  console.log(`Creando nuevo usuario Google: ${email}`)
   return prisma.usuario.create({
     data: {
       email,

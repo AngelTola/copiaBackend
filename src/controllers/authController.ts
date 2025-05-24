@@ -82,11 +82,12 @@ export const login = async (req: Request, res: Response) => {
     const user = await authService.findUserByEmail(email);
 
     if (!user) {
-      return res.status(401).json({ message: "Correo ingresado no se encuentra en el sistema." });
+      res.status(401).json({ message: "Correo ingresado no se encuentra en el sistema." });
+      return;
     }
 
     if (user.registradoCon === "google") {
-      return res.status(401).json({
+      res.status(401).json({
         message: "Esta cuenta fue registrada con Google. Por favor, inicia sesión con Google.",
       });
     }
@@ -94,7 +95,8 @@ export const login = async (req: Request, res: Response) => {
     const isValid = await authService.validatePassword(password, user.contraseña ?? "");
 
     if (!isValid) {
-      return res.status(401).json({ message: "Datos invalidos" });
+      res.status(401).json({ message: "Datos invalidos" });
+      return;
     }
 
     // Token
@@ -105,7 +107,7 @@ export const login = async (req: Request, res: Response) => {
     });
 
     console.info("Login exitoso para usuario:", email);
-    return res.json({
+    res.json({
       message: "Login exitoso",
       token,
       user: {
@@ -115,7 +117,8 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error inesperado en login:", error);
-    return res.status(500).json({ message: "Error en el servidor" });
+    res.status(500).json({ message: "Error en el servidor" });
+    return;
   }
 };
 
@@ -212,7 +215,6 @@ export const deleteProfilePhoto = async (req: Request, res: Response) => {
 
     const filePath = path.join(__dirname, "../../", user.fotoPerfil)
 
-    // Elimina la foto física si existe
     fs.unlink(filePath, (err) => {
       if (err) {
         console.error("Error eliminando el archivo:", err)
@@ -221,7 +223,6 @@ export const deleteProfilePhoto = async (req: Request, res: Response) => {
       }
     })
 
-    // Borra la referencia en la base de datos
     await prisma.usuario.update({
       where: { idUsuario },
       data: { fotoPerfil: null },
@@ -311,7 +312,7 @@ export const updateUserField = async (req: Request, res: Response) => {
 }
 
 export const getUserProfile = async (req: Request, res: Response) => {
-  const idUsuario = Number(req.params.id_usuario) // Cambié de idUsuario a id_usuario para consistencia
+  const idUsuario = Number(req.params.id_usuario)
 
   if (isNaN(idUsuario)) {
     res.status(400).json({ message: "ID de usuario inválido" })
