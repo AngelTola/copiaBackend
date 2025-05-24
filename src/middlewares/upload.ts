@@ -11,13 +11,13 @@ const sanitize = (name: string) => {
 // ✅ Configuración de almacenamiento dinámica
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const user = req.user as { id_usuario: number; nombre_completo: string };
-    const nombreSanitizado = sanitize(user.nombre_completo);
+    const user = req.user as { idUsuario: number; nombre: string; apellido: string };
+    const nombreSanitizado = sanitize(user.nombre + " " + user.apellido);
     
     // Usa el campo del archivo para determinar la carpeta
     const tipo = file.fieldname === 'qrImage' ? 'qr' : 'vehiculo';
 
-    const dir = path.join('uploads', `usuario_${user.id_usuario}_${nombreSanitizado}`, tipo);
+    const dir = path.join('uploads', `usuario_${user.idUsuario}_${nombreSanitizado}`, tipo);
     fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },

@@ -9,7 +9,7 @@ const storage = multer.memoryStorage();
 export const upload = multer({ storage });
 
 export const uploadProfilePhoto = async (req: Request, res: Response) => {
-  const { id_usuario } = req.user as { id_usuario: number };
+  const { idUsuario } = req.user as { idUsuario: number };
 
   if (!req.file) {
     return res.status(400).json({ message: 'No se subió ninguna imagen.' });
@@ -19,7 +19,7 @@ export const uploadProfilePhoto = async (req: Request, res: Response) => {
     const result: UploadApiResponse = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
-          folder: `Redibo/FotosPerfil/${id_usuario}`,
+          folder: `Redibo/FotosPerfil/${idUsuario}`,
           resource_type: 'image',
         },
         (error, result) => {
@@ -31,11 +31,11 @@ export const uploadProfilePhoto = async (req: Request, res: Response) => {
     });
 
     await prisma.usuario.update({
-      where: { id_usuario },
-      data: { foto_perfil: result.secure_url },
+      where: { idUsuario },
+      data: { fotoPerfil: result.secure_url },
     });
 
-    return res.json({ message: 'Foto actualizada exitosamente.', foto_perfil: result.secure_url });
+    return res.json({ message: 'Foto actualizada exitosamente.', fotoPerfil: result.secure_url });
   } catch (error) {
     console.error('Error al subir a Cloudinary:', error);
     return res.status(500).json({ message: 'Error al subir la imagen' });
@@ -43,26 +43,26 @@ export const uploadProfilePhoto = async (req: Request, res: Response) => {
 };
 
 export const deleteProfilePhoto = async (req: Request, res: Response) => {
-  const { id_usuario } = req.user as { id_usuario: number };
+  const { idUsuario } = req.user as { idUsuario: number };
 
   try {
     const user = await prisma.usuario.findUnique({
-      where: { id_usuario },
-      select: { foto_perfil: true }
+      where: { idUsuario },
+      select: { fotoPerfil: true }
     });
 
-    if (!user?.foto_perfil) {
+    if (!user?.fotoPerfil) {
       return res.status(400).json({ message: 'No hay foto para eliminar.' });
     }
 
-    const segments = user.foto_perfil.split('/');
+    const segments = user.fotoPerfil.split('/');
     const publicId = segments.slice(-2).join('/').split('.')[0]; // Extrae el ID
 
     await cloudinary.uploader.destroy(publicId);
 
     await prisma.usuario.update({
-      where: { id_usuario },
-      data: { foto_perfil: null },
+      where: { idUsuario },
+      data: { fotoPerfil: null },
     });
 
     return res.json({ message: 'Foto eliminada exitosamente.' });

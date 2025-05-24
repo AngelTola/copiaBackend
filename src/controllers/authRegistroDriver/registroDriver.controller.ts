@@ -6,10 +6,10 @@ export const registrarDriverController = async (req: Request, res: Response): Pr
     const {
       sexo,
       telefono,
-      nro_licencia,
+      licencia,
       categoria,
-      fecha_emision,
-      fecha_vencimiento,
+      fechaEmision,
+      fechaExpiracion,
       anversoUrl,
       reversoUrl,
       rentersIds
@@ -34,13 +34,13 @@ export const registrarDriverController = async (req: Request, res: Response): Pr
 
 
     await registrarDriverCompleto({
-      id_usuario: Number((usuario as any).id_usuario),
+      idUsuario: Number((usuario as any).idUsuario),
       sexo,
       telefono,
-      nro_licencia,
+      licencia,
       categoria,
-      fecha_emision: new Date(fecha_emision),
-      fecha_vencimiento: new Date(fecha_vencimiento),
+      fechaEmision: new Date(fechaEmision),
+      fechaExpiracion: new Date(fechaExpiracion),
       anversoUrl,
       reversoUrl,
       rentersIds
