@@ -10,20 +10,46 @@ import { me } from "@/controllers/auth.controller";
 import { isAuthenticated } from "@/middlewares/isAuthenticated";
 import {deleteProfilePhoto,uploadProfilePhoto,upload,} from "@/controllers/authPerfilUsuarioRenter/fotoPerfil.controller";
 import { authMiddleware } from "@/middlewares/authMiddleware";
-import { updateUserField } from "@/controllers/auth.controller"; 
+import { updateUserField } from "@/controllers/auth.controller";
+import { deleteIncompleteUser } from "@/controllers/auth.controller"; 
+import { registroDriver, obtenerDriver } from "@/controllers/auth.controller";
+import jwt from "jsonwebtoken";
+import { generateToken } from "@/utils/generateToken";
 
 const router = Router();
 
 router.post("/google/complete-profile", updateGoogleProfile);
+router.post("/register", validateRegister, register);
+router.post("/login", validateLogin, login);
+router.post(
+  "/upload-profile-photo",
+  authMiddleware,
+  upload.single("fotoPerfil"),
+  uploadProfilePhoto
+);
+router.post("/check-phone", checkPhoneExists);
+router.post("/registro-driver", authMiddleware, registroDriver);
 
-//nombre completo
 router.put("/user/update", authMiddleware, updateUserField);
 
+router.patch("/update-profile", updateGoogleProfile);
+
+router.delete("/delete-profile-photo", authMiddleware, deleteProfilePhoto);
+router.delete("/delete-incomplete-user", deleteIncompleteUser);
+
+router.get("/me", isAuthenticated, me);
+router.get("/user-profile/:idUsuario", getUserProfile);
+router.get("/driver-info", authMiddleware, obtenerDriver);
+router.get("/auth/success", (req, res) => {
+  res.send("Inicio de sesión con Google exitoso!");
+});
 router.get(
   "/auth/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
-
+router.get("/auth/failure", (req, res) => {
+  res.send("Fallo al iniciar sesión con Google.");
+});
 router.get(
   "/auth/google/callback",
   passport.authenticate("google", {
@@ -31,44 +57,30 @@ router.get(
     session: true,
   }),
   (req, res) => {
-    // 🔥 Redirige al front para que abra el modal de completar perfil
-    res.redirect("http://localhost:3000/home?googleComplete=true");
-  }
-);
-router.get("/auth/success", (req, res) => {
-  res.send("Inicio de sesión con Google exitoso!");
-});
+    const user = req.user as any;
 
-router.patch("/update-profile", updateGoogleProfile);
+    if (!user) {
+      return res.redirect("http://localhost:3000?error=sinusuario");
+    }
 
-router.get("/auth/failure", (req, res) => {
-  res.send("Fallo al iniciar sesión con Google.");
-});
+    if (user.nombreCompleto && user.fechaNacimiento) {
+      const token = generateToken({
+        idUsuario: user.idUsuario,
+        email: user.email,
+        nombreCompleto: user.nombreCompleto,
+      });
+      return res.redirect(`http://localhost:3000/home?token=${token}`);
+    } else {
+      if (!process.env.JWT_SECRET) {
+        throw new Error("JWT_SECRET no definido");
+      }
 
-router.post("/register", validateRegister, register);
-router.post("/login", validateLogin, login);
-router.get("/me", isAuthenticated, me);
-router.get("/user-profile/:idUsuario", getUserProfile);
+      const tempToken = jwt.sign({ email: user.email, idUsuario: -1 }, process.env.JWT_SECRET, {
+        expiresIn: "15m",
+      });
 
-//foto de perfil actualizar/eliminar
-router.post(
-  "/upload-profile-photo",
-  authMiddleware,
-  upload.single("fotoPerfil"),
-  uploadProfilePhoto
-);
-router.delete("/delete-profile-photo", authMiddleware, deleteProfilePhoto);
-
-router.post("/check-phone", checkPhoneExists);
-
-router.get(
-  "/auth/google/callback",
-  passport.authenticate("google", {
-    failureRedirect: "http://localhost:3000/home?error=cuentaExistente",
-    session: true,
-  }),
-  (req, res) => {
-    res.redirect("http://localhost:3000/home?googleComplete=true");
+      return res.redirect(`http://localhost:3000/home?googleComplete=true&token=${tempToken}`);
+    }
   }
 );
 

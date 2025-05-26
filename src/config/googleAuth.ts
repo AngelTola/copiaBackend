@@ -1,7 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { PrismaClient } from "@prisma/client";
-import { findOrCreateGoogleUser } from "../services/auth.service";
 
 const prisma = new PrismaClient();
 
@@ -16,20 +15,25 @@ passport.use(
     async (_accessToken, _refreshToken, profile, done) => {
       try {
         const email = profile.emails?.[0].value;
-        const name = profile.displayName;
+        if (!email) return done(new Error("No se pudo obtener el email"), false);
 
-        if (!email)
-          return done(new Error("No se pudo obtener el email de Google"), false);
+        // Buscar usuario sin crear
+        const user = await prisma.usuario.findUnique({ where: { email } });
 
-        const user = await findOrCreateGoogleUser(email, name);
-
-        if (!user.idUsuario) {
-          return done(null, false, {
-            message: "No se pudo obtener el ID del usuario",
+        // Devolver el usuario si existe, si no, devolver solo el email
+        if (user) {
+          return done(null, user);
+        } else {
+          const newUser = await prisma.usuario.create({
+            data: {
+              email,
+              nombreCompleto: "",
+              registradoCon: "google",
+              verificado: false,
+            },
           });
+          return done(null, newUser);  // devuelve el email nomás
         }
-
-        return done(null, user);
       } catch (error: any) {
         if (error.name === "EmailAlreadyRegistered") {
           return done(null, false, { message: error.message });

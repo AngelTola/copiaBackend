@@ -4,7 +4,6 @@ import { requireAuth } from '@/middlewares/authMiddleware';
 
 const router = Router();
 
-// Ruta protegida para registrar a un usuario como driver
-router.post('/registro-driver', requireAuth, registrarDriverController);
+//router.post('/registro-driver', requireAuth, registrarDriverController);
 
 export default router;

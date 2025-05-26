@@ -7,48 +7,119 @@ export const registrarHostCompletoController = async (req: Request, res: Respons
     const {
       placa,
       soat,
-      tipo,
-      numeroTarjeta,
-      fechaExpiracion,
+      // Datos adicionales del auto que faltan
+      marca,
+      modelo,
+      descripcion,
+      precioRentaDiario,
+      montoGarantia,
+      tipo: tipoAuto,
+      año,
+      color,
+      asientos,
+      capacidadMaletero,
+      transmision,
+      combustible,
+      idUbicacion,
+      // Datos de pago
+      tipo: tipoPago,
+      numero_tarjeta: numeroTarjeta,
+      fecha_expiracion: fechaExpiracion,
+      cvv,
       titular,
-      detallesMetodo,
+      detalles_metodo: detallesMetodo,
     } = req.body;
 
-    //const imagenes = (req.files as any).imagenes || [];
-    const qrImage = (req.files as any).qrImage?.[0];
+    console.log('📋 Datos recibidos:', req.body);
+    console.log('📁 Archivos recibidos:', req.files);
 
-    /*if (!placa || !soat || imagenes.length < 3) {
-      res.status(400).json({ message: "Faltan datos del vehículo" });
+    // Obtener las imágenes del auto
+    const imagenes = (req.files as any)?.imagenes || [];
+    const qrImage = (req.files as any)?.qrImage?.[0];
+
+    // Validaciones básicas
+    if (!placa || !soat) {
+      res.status(400).json({ message: "Placa y SOAT son requeridos" });
       return;
     }
-      */
 
-    const tipoFinal =
-      tipo === "card" ? "TARJETA_DEBITO" : tipo === "qr" ? "QR" : tipo === "cash" ? "EFECTIVO" : null;
+    if (imagenes.length < 1) {
+      res.status(400).json({ message: "Se requiere al menos una imagen del vehículo" });
+      return;
+    }
+
+    let ubicacionId = parseInt(idUbicacion) || 1; // Usar ubicación por defecto
+
+    // Mapear el tipo de pago
+    const tipoFinal = 
+      tipoPago === "TARJETA_DEBITO" ? "TARJETA_DEBITO" : 
+      tipoPago === "QR" ? "QR" : 
+      tipoPago === "EFECTIVO" ? "EFECTIVO" : null;
 
     if (!tipoFinal) {
       res.status(400).json({ message: "Tipo de método de pago inválido" });
       return;
     }
 
-    await registrarHostCompleto({
+    // Llamar al servicio
+    const resultado = await registrarHostCompleto({
       idUsuario: usuario.idUsuario,
+      // Datos del auto
       placa,
       soat,
-      //imagenes: imagenes.map((f: any) => f.filename),
-      tipo: tipoFinal,
+      marca: marca || "No especificada",
+      modelo: modelo || "No especificado", 
+      descripcion: descripcion || "Auto disponible para renta",
+      precioRentaDiario: parseFloat(precioRentaDiario) || 50.00,
+      montoGarantia: parseFloat(montoGarantia) || 200.00,
+      tipoAuto: tipoAuto || "SEDAN",
+      año: parseInt(año) || new Date().getFullYear(),
+      color: color || "No especificado",
+      asientos: parseInt(asientos) || 5,
+      capacidadMaletero: parseInt(capacidadMaletero) || 400,
+      transmision: transmision || "MANUAL",
+      combustible: combustible || "GASOLINA",
+      idUbicacion: ubicacionId,
+      imagenes: imagenes.map((f: any) => f.filename),
+      // Datos de pago
+      tipoPago: tipoFinal,
       numeroTarjeta,
       fechaExpiracion,
+      cvv,
       titular,
       imagenQr: qrImage?.filename,
       detallesMetodoPago: detallesMetodo,
     });
 
-    // ✅ No retornes res.status(...), simplemente termina con void
-    res.status(201).json({ success: true, message: "Registro host completo" });
+    console.log('✅ Registro completado:', resultado);
+
+    res.status(201).json({ 
+      success: true, 
+      message: "Host registrado exitosamente",
+      data: {
+        autoId: resultado.auto?.idAuto || null,
+        usuario: resultado.usuario.host
+      }
+    });
+
   } catch (error) {
     console.error("❌ Error al registrar host:", error);
-    res.status(500).json({ message: "Error al registrar host" });
+    
+    // Manejo de errores más específico
+    if (error instanceof Error) {
+      if (error.message.includes('Unique constraint')) {
+        res.status(409).json({ message: "La placa ya está registrada" });
+        return;
+      }
+      if (error.message.includes('Foreign key constraint')) {
+        res.status(400).json({ message: "Datos de referencia inválidos" });
+        return;
+      }
+    }
+    
+    res.status(500).json({ 
+      message: "Error interno del servidor",
+      error: process.env.NODE_ENV === 'development' ? error : undefined
+    });
   }
 };
-

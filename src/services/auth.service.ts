@@ -35,22 +35,32 @@ export const createUser = async (data: {
 export const updateGoogleProfile = async (
   email: string,
   nombreCompleto: string,
-  fechaNacimiento: string
+  fechaNacimiento: string,
+  telefono?: string
 ) => {
 
   const existingUser = await prisma.usuario.findUnique({
     where: { email },
   });
 
-  if (existingUser && existingUser.registradoCon === "email") {
-    throw new Error("Este correo ya está registrado con email");
+  if(!existingUser){
+    throw new Error("No se encontro ningun usuario con este email");
   }
-
+  if(existingUser && existingUser.contraseña){
+    throw new Error("Este correo ya esta registrado con email y contrasena") // talvez eliminar
+  }
+ //validar fecha antes de pasarla a prisma 
+  const parsedFecha =  new Date(fechaNacimiento);
+  if(!nombreCompleto || isNaN(parsedFecha.getTime())){
+    throw new Error("Datos incompletos o fecha invalida");
+  }
   const updatedUser = await prisma.usuario.update({
     where: { email },
     data: {
       nombreCompleto,
-      fechaNacimiento: new Date(fechaNacimiento),
+      fechaNacimiento: parsedFecha,
+      telefono: telefono ?? null,
+      registradoCon: "google",
     },
   });
 

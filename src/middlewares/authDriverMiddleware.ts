@@ -1,12 +1,10 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 
-// Interfaz extendida para agregar la propiedad `user`
 interface AuthenticatedRequest extends Request {
   user?: { idUsuario: number };
 }
 
-// Implementación del middleware
 const authDriverMiddleware: RequestHandler = (req, res, next) => {
   const authHeader = req.headers.authorization;
 

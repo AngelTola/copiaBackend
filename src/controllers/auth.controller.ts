@@ -38,7 +38,7 @@ export const register = async (req: Request, res: Response) => {
 }
 
 export const updateGoogleProfile = async (req: Request, res: Response) => {
-  const { nombre, fechaNacimiento, telefono } = req.body
+  const { nombreCompleto, fechaNacimiento, telefono } = req.body
   const email = req.body.email // Obtener email del body, no del user
 
   if (!email) {
@@ -49,7 +49,7 @@ export const updateGoogleProfile = async (req: Request, res: Response) => {
   console.log(`📝 Actualizando perfil de Google para: ${email}`)
 
   try {
-    const updatedUser = await authService.updateGoogleProfile(email, nombre, fechaNacimiento)
+    const updatedUser = await authService.updateGoogleProfile(email, nombreCompleto, fechaNacimiento, telefono)
 
     // Generar token para el usuario actualizado
     const token = generateToken({
@@ -222,7 +222,7 @@ export const deleteProfilePhoto = async (req: Request, res: Response) => {
       if (err) {
         console.error("Error eliminando el archivo:", err)
       } else {
-        console.log("✅ Foto eliminada del servidor:", filePath)
+        console.log("Foto eliminada del servidor:", filePath)
       }
     })
 
@@ -439,3 +439,255 @@ export const checkPhoneExists = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error en el servidor" })
   }
 }
+
+export const deleteIncompleteUser = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  if (!email) {
+    res.status(400).json({ message: "Email no proporcionado" });
+    return;
+  }
+
+  console.log(`🗑️ Intentando eliminar usuario incompleto: ${email}`);
+
+  try {
+    const user = await authService.findUserByEmail(email);
+
+    if (!user) {
+      res.status(404).json({ message: "Usuario no encontrado" });
+      return;
+    }
+
+    if (user.registradoCon !== "google") {
+      res.status(400).json({ 
+        message: "Solo se pueden eliminar usuarios registrados con Google" 
+      });
+      return;
+    }
+
+    if (user.nombreCompleto && user.fechaNacimiento) {
+      res.status(400).json({ 
+        message: "No se puede eliminar un usuario con perfil completo" 
+      });
+      return;
+    }
+
+    await prisma.usuario.delete({
+      where: { email }
+    });
+
+    console.log(`✅ Usuario incompleto eliminado exitosamente: ${email}`);
+    
+    res.json({
+      message: "Usuario incompleto eliminado exitosamente",
+      email
+    });
+
+  } catch (error: any) {
+    console.error("Error al eliminar usuario incompleto:", error);
+    
+    if (error.code === 'P2025') {
+      res.status(404).json({ message: "Usuario no encontrado" });
+      return;
+    }
+
+    res.status(500).json({ 
+      message: "Error al eliminar el usuario incompleto" 
+    });
+  }
+};
+
+export const registroDriver = async (req: Request, res: Response) => {
+  try {
+    const { idUsuario } = req.user as { idUsuario: number };
+
+    const {
+      sexo,
+      telefono,
+      nro_licencia,
+      categoria,
+      fecha_emision,
+      fecha_vencimiento,
+      anversoUrl,
+      reversoUrl,
+      rentersIds = []
+    } = req.body;
+
+    if (!sexo || !telefono || !nro_licencia || !categoria || !fecha_emision || !fecha_vencimiento || !anversoUrl || !reversoUrl) {
+      res.status(400).json({ 
+        message: 'Faltan datos requeridos para el registro del driver' 
+      });
+      return;
+    }
+
+    const usuarioExistente = await prisma.usuario.findUnique({
+      where: { idUsuario },
+      include: { driver: true }
+    });
+
+    if (!usuarioExistente) {
+      res.status(404).json({ message: 'Usuario no encontrado' });
+      return;
+    }
+
+    if (usuarioExistente.driver) {
+      res.status(400).json({ 
+        message: 'El usuario ya está registrado como driver' 
+      });
+      return;
+    }
+
+    if (rentersIds.length > 0) {
+      const rentersExistentes = await prisma.usuario.findMany({
+        where: {
+          idUsuario: { in: rentersIds },
+        },
+        select: { idUsuario: true }
+      });
+
+      if (rentersExistentes.length !== rentersIds.length) {
+        res.status(400).json({ 
+          message: 'Algunos renters seleccionados no existen' 
+        });
+        return;
+      }
+    }
+
+    const fechaEmision = new Date(fecha_emision);
+    const fechaExpiracion = new Date(fecha_vencimiento);
+
+    if (isNaN(fechaEmision.getTime()) || isNaN(fechaExpiracion.getTime())) {
+      res.status(400).json({ message: 'Fechas de licencia inválidas' });
+      return;
+    }
+
+    const resultado = await prisma.$transaction(async (tx) => {
+      await tx.usuario.update({
+        where: { idUsuario },
+        data: { driverBool: true }
+      });
+
+      const nuevoDriver = await tx.driver.create({
+        data: {
+          idUsuario,
+          sexo,
+          telefono,
+          licencia: nro_licencia,
+          fechaEmision,
+          fechaExpiracion,
+          tipoLicencia: categoria,
+          anversoUrl,
+          reversoUrl,
+          disponible: true
+        }
+      });
+
+      if (rentersIds.length > 0) {
+        const relacionesData = rentersIds.map((renterId: number) => ({
+          idUsuario: renterId,
+          idDriver: nuevoDriver.idDriver
+        }));
+
+        await tx.usuarioDriver.createMany({
+          data: relacionesData,
+          skipDuplicates: true
+        });
+      }
+
+      return {
+        driver: nuevoDriver,
+        relacionesCreadas: rentersIds.length
+      };
+    });
+
+    console.log('✅ Driver registrado exitosamente:', {
+      driverId: resultado.driver.idDriver,
+      usuario: usuarioExistente.nombreCompleto,
+      relacionesCreadas: resultado.relacionesCreadas
+    });
+
+    res.status(201).json({
+      message: 'Driver registrado exitosamente',
+      data: {
+        driverId: resultado.driver.idDriver,
+        relacionesCreadas: resultado.relacionesCreadas,
+        rentersAsignados: rentersIds
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error en registro-driver:', error);
+    
+    if (error.code === 'P2002') {
+      res.status(409).json({ 
+        message: 'Ya existe un driver con estos datos',
+        details: error.meta 
+      });
+      return;
+    }
+
+    if (error.code === 'P2003') {
+      res.status(400).json({ 
+        message: 'Error de referencia en base de datos',
+        details: error.meta 
+      });
+      return;
+    }
+
+    res.status(500).json({ 
+      message: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno'
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+export const obtenerDriver = async (req: Request, res: Response) => {
+  try {
+    const { idUsuario } = req.user as { idUsuario: number };
+
+    const driver = await prisma.driver.findUnique({
+      where: { idUsuario },
+      include: {
+        usuario: {
+          select: {
+            idUsuario: true,
+            nombreCompleto: true,
+            email: true,
+            fotoPerfil: true
+          }
+        },
+        asignadoA: {
+          include: {
+            usuario: {
+              select: {
+                idUsuario: true,
+                nombreCompleto: true,
+                email: true,
+                telefono: true,
+                fotoPerfil: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!driver) {
+      res.status(404).json({ message: 'Driver no encontrado' });
+      return;
+    }
+
+    res.json({
+      message: 'Driver encontrado',
+      data: driver
+    });
+
+  } catch (error) {
+    console.error('❌ Error al obtener driver:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  } finally {
+    await prisma.$disconnect();
+  }
+};

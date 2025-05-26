@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
-//import { resetAttempts } from '../utils/attemptStore';
 
 const prisma = new PrismaClient();
 const userData = { emailBD: '', codeBD: '',};
@@ -12,14 +11,6 @@ export const codeverifyController = async (data: { emailBD: string, codeBD: stri
   userData.emailBD = data.emailBD;
   userData.codeBD = data.codeBD;
 }
-
-/*/ Function to verify the code received in the request
-export const verifyCode = async (req: Request): Promise<string> => {
-  const { code } = req.body; // Get the code from request body
-  console.log('🧪 Código recibido:', code, userData.codeBD); // Log the received code
-  return code; // Return the received code for comparison
-};*/
-
 
 export const verifyCode = async (req: Request, res: Response) => {
   const { code } = req.body;
@@ -69,11 +60,9 @@ export const verifyCode = async (req: Request, res: Response) => {
           },
         });
         console.log(`Intentos fallidos: ${updatedUser.intentosFallidos}`);
-        //res.status(400).json({ message: 'Código incorrecto. Por favor intenta nuevamente' });
-        //Enviar al usuario al login
 
         if (updatedUser.intentosFallidos === 5) {
-          const blockUntil = new Date(Date.now() + 15 * 60 * 1000); // Bloquear al usuario durante 15 minutos
+          const blockUntil = new Date(Date.now() + 15 * 60 * 1000);
           await prisma.usuario.update({
             where: { email: user?.email },
             data: {
