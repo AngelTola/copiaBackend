@@ -10,7 +10,7 @@ import passport from "passport";
 import authRegistroHostRoutes from './routes/registroHost.routes';
 import authRegistroDriverRoutes from './routes/registroDriver.routes'; // Import the driver routes
 import "./config/googleAuth"; // <--- importante
-import usuarioRoutes from '@/routes/usuario.routes';
+import usuarioRoutes from './routes/usuario.routes';
 import visualizarDriverRoutes from "./routes/visualizarDriver.routes";
 import autoRoutes from "./routes/auto.routes";
 
@@ -19,10 +19,11 @@ import path from 'path';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const FRONT_URL =  process.env.CLIENT_URL
 
 // Middlewares
 app.use(cors({
-  origin: "http://localhost:3000", // tu frontend
+  origin: FRONT_URL, // tu frontend
   credentials: true,               // para enviar cookies/sesiones
 }));
 /*app.use(helmet());*/

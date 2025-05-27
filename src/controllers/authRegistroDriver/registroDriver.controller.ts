@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { registrarDriverCompleto } from '@/services/registroDriver.service';
+import { registrarDriverCompleto } from '../../services/registroDriver.service';
 
 export const registrarDriverController = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -7,7 +7,7 @@ export const registrarDriverController = async (req: Request, res: Response): Pr
       sexo,
       telefono,
       licencia,
-      categoria,
+      tipoLicencia,
       fechaEmision,
       fechaExpiracion,
       anversoUrl,
@@ -38,7 +38,7 @@ export const registrarDriverController = async (req: Request, res: Response): Pr
       sexo,
       telefono,
       licencia,
-      categoria,
+      tipoLicencia,
       fechaEmision: new Date(fechaEmision),
       fechaExpiracion: new Date(fechaExpiracion),
       anversoUrl,

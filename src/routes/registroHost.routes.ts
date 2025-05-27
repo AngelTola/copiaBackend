@@ -1,7 +1,7 @@
 import express from 'express';
-import { registrarHostCompletoController } from '@/controllers//authRegistroHost/registroHost.controller';
-import { requireAuth } from '@/middlewares/authMiddleware';
-import upload from '@/middlewares/upload';
+import { registrarHostCompletoController } from '../../src/controllers//authRegistroHost/registroHost.controller';
+import { requireAuth } from '../../src/middlewares/authMiddleware';
+import upload from '../../src/middlewares/upload';
 
 const router = express.Router();
 

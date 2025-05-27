@@ -1,22 +1,23 @@
 // src/routes/auth.routes.ts
 import { Router } from "express";
-import { register, login, getUserProfile } from "@/controllers/auth.controller";
-import { validateRegister } from "@/middlewares/validateRegister";
-import { validateLogin } from "@/middlewares/validateLogin";
+import { register, login, getUserProfile } from "../../src/controllers/auth.controller";
+import { validateRegister } from "../../src/middlewares/validateRegister";
+import { validateLogin } from "../../src/middlewares/validateLogin";
 import passport from "passport";
 import { updateGoogleProfile } from "../controllers/auth.controller";
-import { checkPhoneExists } from "@/controllers/auth.controller";
-import { me } from "@/controllers/auth.controller";
-import { isAuthenticated } from "@/middlewares/isAuthenticated";
-import {deleteProfilePhoto,uploadProfilePhoto,upload,} from "@/controllers/authPerfilUsuarioRenter/fotoPerfil.controller";
-import { authMiddleware } from "@/middlewares/authMiddleware";
-import { updateUserField } from "@/controllers/auth.controller";
-import { deleteIncompleteUser } from "@/controllers/auth.controller"; 
-import { registroDriver, obtenerDriver } from "@/controllers/auth.controller";
+import { checkPhoneExists } from "../../src/controllers/auth.controller";
+import { me } from "../../src/controllers/auth.controller";
+import { isAuthenticated } from "../../src/middlewares/isAuthenticated";
+import {deleteProfilePhoto,uploadProfilePhoto,upload,} from "../../src/controllers/authPerfilUsuarioRenter/fotoPerfil.controller";
+import { authMiddleware } from "../../src/middlewares/authMiddleware";
+import { updateUserField } from "../../src/controllers/auth.controller";
+import { deleteIncompleteUser } from "../../src/controllers/auth.controller"; 
+import { registroDriver, obtenerDriver } from "../../src/controllers/auth.controller";
 import jwt from "jsonwebtoken";
-import { generateToken } from "@/utils/generateToken";
+import { generateToken } from "../../src/utils/generateToken";
 
 const router = Router();
+const FRONT_URL = process.env.CLIENT_URL;
 
 router.post("/google/complete-profile", updateGoogleProfile);
 router.post("/register", validateRegister, register);
@@ -53,14 +54,14 @@ router.get("/auth/failure", (req, res) => {
 router.get(
   "/auth/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "http://localhost:3000?error=google",
+    failureRedirect: `${FRONT_URL}?error=google`,
     session: true,
   }),
   (req, res) => {
     const user = req.user as any;
 
     if (!user) {
-      return res.redirect("http://localhost:3000?error=sinusuario");
+      return res.redirect(`${FRONT_URL}?error=sinusuario`);
     }
 
     if (user.nombreCompleto && user.fechaNacimiento) {
@@ -69,7 +70,7 @@ router.get(
         email: user.email,
         nombreCompleto: user.nombreCompleto,
       });
-      return res.redirect(`http://localhost:3000/home?token=${token}`);
+      return res.redirect(`${FRONT_URL}/home?token=${token}`);
     } else {
       if (!process.env.JWT_SECRET) {
         throw new Error("JWT_SECRET no definido");
@@ -79,7 +80,7 @@ router.get(
         expiresIn: "15m",
       });
 
-      return res.redirect(`http://localhost:3000/home?googleComplete=true&token=${tempToken}`);
+      return res.redirect(`${FRONT_URL}/home?googleComplete=true&token=${tempToken}`);
     }
   }
 );

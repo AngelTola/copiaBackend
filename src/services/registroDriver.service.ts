@@ -6,7 +6,7 @@ export const registrarDriverCompleto = async (data: {
   sexo: string;
   telefono: string;
   licencia: string;
-  categoria: string;
+  tipoLicencia: string;
   fechaEmision: Date;
   fechaExpiracion: Date;
   anversoUrl: string;
@@ -18,7 +18,7 @@ export const registrarDriverCompleto = async (data: {
     sexo,
     telefono,
     licencia,
-    categoria,
+    tipoLicencia,
     fechaEmision,
     fechaExpiracion,
     anversoUrl,
@@ -38,48 +38,49 @@ export const registrarDriverCompleto = async (data: {
 
   const telefonoFinal = usuario?.telefono ? String(usuario.telefono) : telefono;
 
-  return await prisma.$transaction([
-    // 1. Crear al driver
-    prisma.driver.create({
+  return await prisma.$transaction(async (tx) => {
+    const nuevoDriver = await tx.driver.create({
       data: {
         idUsuario,
         sexo,
         telefono: telefonoFinal,
         licencia,
-        categoria,
+        tipoLicencia,
         fechaEmision,
         fechaExpiracion,
         anversoUrl,
         reversoUrl
       }
-    }),
+    });
 
-    // 2. Si no tenía teléfono, actualizarlo ahora
-    ...(usuario?.telefono
-      ? [] // ya tiene, no actualizamos
-      : [
-          prisma.usuario.update({
-            where: { idUsuario },
-            data: { telefono }
-          })
-        ]),
+    if (!usuario?.telefono) {
+      await tx.usuario.update({
+        where: { idUsuario },
+        data: { telefono }
+      });
+    }
 
-    // 3. Marcar al usuario como driver (driverBool = true)
-    prisma.usuario.update({
+    await tx.usuario.update({
       where: { idUsuario },
       data: { driverBool: true }
-    }),
+    });
+    
+    const relacionesDriver = await Promise.all(
+      rentersIds.map((renterId) =>
+        tx.usuarioDriver.create({
+          data: {
+            idUsuario: renterId,
+            idDriver: nuevoDriver.idDriver
+          }
+        })
+      )
+    );
 
-    // 4. Asignar renters
-    ...rentersIds.map((renterId) =>
-      prisma.usuario.update({
-        where: { idUsuario: renterId },
-        data: {
-          assignedToDriver: idUsuario
-        }
-      })
-    )
-  ]);
+    return {
+      driver: nuevoDriver,
+      relaciones: relacionesDriver
+    };
+  });
 };
  
 
