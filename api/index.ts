@@ -9,7 +9,7 @@ import session from "express-session";
 import passport from "passport";
 import authRegistroHostRoutes from '../src/routes/registroHost.routes';
 import authRegistroDriverRoutes from '../src/routes/registroDriver.routes'; // Import the driver routes
-import "./config/googleAuth"; // <--- importante
+import "../src/config/googleAuth"; // <--- importante
 import usuarioRoutes from '../src/routes/usuario.routes';
 import visualizarDriverRoutes from "../src/routes/visualizarDriver.routes";
 import autoRoutes from "../src/routes/auto.routes";
