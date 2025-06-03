@@ -1,7 +1,7 @@
 import express from 'express';
-import { registrarHostCompletoController } from '../../src/controllers//authRegistroHost/registroHost.controller';
+import { registrarHostCompletoController } from '../../src/controllers/authRegistroHost/registroHost.controller';
 import { requireAuth } from '../../src/middlewares/authMiddleware';
-import upload from '../../src/middlewares/upload';
+import upload, { uploadToCloudinary } from '../../src/middlewares/upload';
 
 const router = express.Router();
 
@@ -12,6 +12,7 @@ router.post(
     { name: 'imagenes', maxCount: 6 },
     { name: 'qrImage', maxCount: 1 },
   ]),
+  uploadToCloudinary,
   registrarHostCompletoController
 );
 
