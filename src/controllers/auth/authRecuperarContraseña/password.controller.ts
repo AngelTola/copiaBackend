@@ -4,9 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { RequestHandler } from 'express';
 import { codeverifyController, verifyCode } from './verifyCodeController';
 import { getEmail } from './resetPasswordController';
-
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma';
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',

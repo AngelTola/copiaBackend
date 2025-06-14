@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma';
 
 export const obtenerTopAutos = async () => {
   const autos = await prisma.auto.findMany({

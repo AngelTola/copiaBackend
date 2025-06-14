@@ -2,7 +2,7 @@
 import { PrismaClient } from '@prisma/client';
 import nodemailer from 'nodemailer';
 import { generateToken } from '../../../utils/auth/generateToken';
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma';
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',

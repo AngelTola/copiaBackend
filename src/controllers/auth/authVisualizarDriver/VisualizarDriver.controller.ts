@@ -2,8 +2,7 @@
 import { RequestHandler } from "express";
 import { PrismaClient } from "@prisma/client";
 import { AuthenticatedRequest } from "../../../middlewares/auth/authDriverMiddleware";
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma';
 
 export const getDriverProfile: RequestHandler = async (req, res, next) => {
   const authReq = req as AuthenticatedRequest;

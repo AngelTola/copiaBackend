@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { isValid, parseISO } from "date-fns";
 
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma';
 
 export const getAutos = async (req: Request, res: Response) => {
   try {

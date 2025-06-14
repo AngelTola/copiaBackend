@@ -1,8 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { RequestHandler } from 'express';
 import bcrypt from 'bcryptjs'; // 👈 IMPORTANTE
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma';
 let userEmailBD = '';
 
 export const getEmail = async (emailBD: string): Promise<any> => {

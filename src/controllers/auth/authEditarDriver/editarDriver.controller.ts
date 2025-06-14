@@ -3,8 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { v2 as cloudinary } from "cloudinary";
 import streamifier from "streamifier";
 import { AuthenticatedRequest } from "../../../middlewares/auth/authDriverMiddleware";
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma';
 
 // Función para subir imagen a Cloudinary desde un buffer
 const uploadToCloudinary = (fileBuffer: Buffer, folder: string): Promise<string> => {

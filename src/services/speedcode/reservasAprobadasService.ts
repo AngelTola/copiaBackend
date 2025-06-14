@@ -1,7 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { differenceInDays } from 'date-fns';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma';
 
 export const obtenerReservasAprobadas = async () => {
   return await prisma.reserva.findMany({

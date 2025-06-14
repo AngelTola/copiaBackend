@@ -1,5 +1,5 @@
 //src/services/notificaciones/notificacion.service.ts
-import prisma from '../../config/database';
+import { prisma } from '../../lib/prisma';
 import { NotificacionDTO, NotificacionFiltro } from '../../types/notificaciones/notificacion.types';
 import { PrioridadNotificacion } from '@prisma/client';
 import { SSEService } from './sse.service';

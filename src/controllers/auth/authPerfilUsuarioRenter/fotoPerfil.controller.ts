@@ -3,8 +3,7 @@ import multer from 'multer';
 import { PrismaClient } from '@prisma/client';
 import { cloudinary } from '../../../config/cloudinary';
 import type { UploadApiResponse } from 'cloudinary';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma';
 const storage = multer.memoryStorage();
 export const upload = multer({ storage });
 

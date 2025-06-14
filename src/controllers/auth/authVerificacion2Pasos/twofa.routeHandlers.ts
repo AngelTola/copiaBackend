@@ -2,8 +2,7 @@
 import { Request, Response } from 'express';
 import { enviarCodigo2FA, verificarCodigo2FA, verifyLoginCode } from './twofa.controller';
 import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma';
 
 export const handleEnviarCodigo = async (req: Request, res: Response) => {
   try {

@@ -1,8 +1,7 @@
 //src/services/auth/auth.service.ts
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma';
 
 export const findUserByEmail = async (email: string) => {
   return prisma.usuario.findUnique({ where: { email } });

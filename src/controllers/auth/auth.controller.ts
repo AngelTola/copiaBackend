@@ -6,7 +6,7 @@ import { generateToken } from "../../utils/auth/generateToken";
 
 import { updateGoogleProfile as updateGoogleProfileService } from "../../services/auth/auth.service";
 
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   const { nombreCompleto, email, contraseña, fechaNacimiento, telefono } =

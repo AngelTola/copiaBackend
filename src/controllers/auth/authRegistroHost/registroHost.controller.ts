@@ -2,8 +2,7 @@ import { Request, Response } from "express";
 import { registrarHostCompleto } from "../../../services/auth/pago.service";
 import { uploadToCloudinary } from "../../../services/auth/upload.service";
 import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma';
 
 export const registrarHostCompletoController = async (
   req: Request,

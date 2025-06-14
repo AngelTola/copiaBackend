@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { JwtPayload } from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma';
 
 export const getDriversByRenter = async (req: Request, res: Response) => {
   try {

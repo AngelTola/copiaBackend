@@ -1,7 +1,6 @@
 //src/services/auth/visualizarRenters.service.ts
 import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma';
 
 export const obtenerRentersDeDriver = async (idUsuario: number) => {
   const driver = await prisma.driver.findUnique({

@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { isWithinInterval } from 'date-fns';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma';
 
 interface FiltroVehiculo {
   texto?: string;

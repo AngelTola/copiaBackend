@@ -1,8 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
 //import { resetAttempts } from '../utils/attemptStore';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma';
 const userData = { emailBD: '', codeBD: '',};
 
 export const codeverifyController = async (data: { emailBD: string, codeBD: string }): Promise<any> => {
