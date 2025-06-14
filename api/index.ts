@@ -3,16 +3,16 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 dotenv.config();
-import passwordRoutes from '../src/routes/password.routes';
-import authRoutes from '../src/routes/auth.routes';
+import passwordRoutes from '../src/routes/auth/password.routes';
+import authRoutes from '../src/routes/auth/auth.routes';
 import session from "express-session";
 import passport from "passport";
-import authRegistroHostRoutes from '../src/routes/registroHost.routes';
-import authRegistroDriverRoutes from '../src/routes/registroDriver.routes'; // Import the driver routes
+import authRegistroHostRoutes from '../src/routes/auth/registroHost.routes';
+import authRegistroDriverRoutes from '../src/routes/auth/registroDriver.routes'; // Import the driver routes
 import "../src/config/googleAuth"; // <--- importante
-import usuarioRoutes from '../src/routes/usuario.routes';
-import visualizarDriverRoutes from "../src/routes/visualizarDriver.routes";
-import autoRoutes from "../src/routes/auto.routes";
+import usuarioRoutes from '../src/routes/auth/usuario.routes';
+import visualizarDriverRoutes from "../src/routes/auth/visualizarDriver.routes";
+import autoRoutes from "../src/routes/qantastic/auto.routes";
 
 import path from 'path';
 // Cargar variables de entorno
