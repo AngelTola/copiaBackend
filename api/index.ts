@@ -10,7 +10,7 @@ import { PrismaClient } from "@prisma/client";
 import { v4 as uuidv4 } from "uuid";
 
 // Configuración de Google Auth
-import "./config/googleAuth";
+import "../src/config/googleAuth";
 
 // Rutas de autenticación
 import passwordRoutes from "../src/routes/auth/password.routes";
