@@ -33,7 +33,7 @@ router.get(
 router.get(
   "/auth/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "https://integracion-front.vercel.app/home?error=google",
+    failureRedirect: "https://copia-front.vercel.app/home?error=google",
     session: false,
   }),
   (req, res) => {
@@ -48,7 +48,7 @@ router.get(
     if (info?.message === "alreadyExists" || info?.message === "loginWithGoogle") {
       console.log("⚠️ Usuario ya registrado. Enviando login automático.");
       return res.redirect(
-        `https://integracion-front.vercel.app/home?googleAutoLogin=true&token=${info.token}&email=${info.email}`
+        `https://copia-front.vercel.app/home?googleAutoLogin=true&token=${info.token}&email=${info.email}`
       );
     }
 
@@ -62,7 +62,7 @@ router.get(
     console.log("🧩 Usuario nuevo, redirigiendo a completar perfil");
 
     return res.redirect(
-      `https://integracion-front.vercel.app/home?googleComplete=true&token=${token}&email=${user.email}`
+      `https://copia-front.vercel.app/home?googleComplete=true&token=${token}&email=${user.email}`
     );
   }
 );
