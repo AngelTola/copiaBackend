@@ -73,7 +73,7 @@ async function ensureDefaultUbicacion() {
 
 // ✅ CORS robusto
 app.use((req: Request, res: Response, next: NextFunction): void => {
-  res.header("Access-Control-Allow-Origin", "https://copia-front.vercel.app");
+  res.header("Access-Control-Allow-Origin", "https://copia-frontend.vercel.app");
   res.header("Access-Control-Allow-Credentials", "true");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");

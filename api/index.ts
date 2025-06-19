@@ -74,13 +74,13 @@ async function ensureDefaultUbicacion() {
 
 // ✅ CORS con configuración mejorada (combinando ambos enfoques)
 app.use(cors({
-  origin: FRONT_URL || "https://copia-front.vercel.app", // Usar FRONT_URL del .env o fallback
+  origin: FRONT_URL || "https://copia-frontend.vercel.app", // Usar FRONT_URL del .env o fallback
   credentials: true,
 }));
 
 // Middleware adicional para CORS headers (del primer index)
 app.use((req: Request, res: Response, next: NextFunction): void => {
-  res.header("Access-Control-Allow-Origin", FRONT_URL || "https://copia-front.vercel.app");
+  res.header("Access-Control-Allow-Origin", FRONT_URL || "https://copia-frontend.vercel.app");
   res.header("Access-Control-Allow-Credentials", "true");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
